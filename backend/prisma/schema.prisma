@@ -1,0 +1,409 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────
+// MULTI-TENANCY
+// ─────────────────────────────────────────
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  currency  String   @default("USD")
+  timezone  String   @default("UTC")
+  locale    String   @default("es")
+  logoUrl   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users        User[]
+  categories   Category[]
+  products     Product[]
+  customers    Customer[]
+  transactions Transaction[]
+  taxRates     TaxRate[]
+  discounts    Discount[]
+  featureFlags FeatureFlag[]
+
+  @@map("tenants")
+}
+
+// ─────────────────────────────────────────
+// USUARIOS Y ROLES
+// ─────────────────────────────────────────
+
+enum UserRole {
+  OWNER
+  ADMIN
+  CASHIER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  tenantId     String
+  email        String
+  passwordHash String
+  name         String
+  role         UserRole @default(CASHIER)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  transactions Transaction[] @relation("CashierTransactions")
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+// ─────────────────────────────────────────
+// CATÁLOGO
+// ─────────────────────────────────────────
+
+enum SellBy {
+  UNIT
+  WEIGHT
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  tenantId  String
+  name      String
+  parentId  String?
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+
+  tenant   Tenant     @relation(fields: [tenantId], references: [id])
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  categoryId          String?
+  name                String
+  description         String?
+  sku                 String?
+  barcode             String?
+  sellBy              SellBy   @default(UNIT)
+  costPrice           Decimal  @default(0) @db.Decimal(10, 2)
+  basePrice           Decimal  @db.Decimal(10, 2)
+  trackStock          Boolean  @default(true)
+  stockAlertThreshold Int?     @default(5)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  tenant           Tenant           @relation(fields: [tenantId], references: [id])
+  category         Category?        @relation(fields: [categoryId], references: [id])
+  images           ProductImage[]
+  options          ProductOption[]
+  variants         ProductVariant[]
+  transactionItems TransactionItem[]
+
+  @@unique([tenantId, sku])
+  @@unique([tenantId, barcode])
+  @@map("products")
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  url       String
+  altText   String?
+  sortOrder Int     @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+model ProductOption {
+  id        String @id @default(cuid())
+  productId String
+  name      String
+  position  Int
+
+  product Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  values  ProductOptionValue[]
+
+  @@unique([productId, position])
+  @@map("product_options")
+}
+
+model ProductOptionValue {
+  id        String @id @default(cuid())
+  optionId  String
+  value     String
+  sortOrder Int    @default(0)
+
+  option   ProductOption       @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  variants VariantOptionValue[]
+
+  @@map("product_option_values")
+}
+
+model ProductVariant {
+  id            String   @id @default(cuid())
+  productId     String
+  sku           String?
+  barcode       String?
+  priceOverride Decimal? @db.Decimal(10, 2)
+  costOverride  Decimal? @db.Decimal(10, 2)
+  stockQty      Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  product            Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  optionValues       VariantOptionValue[]
+  inventoryMovements InventoryMovement[]
+  transactionItems   TransactionItem[]
+
+  @@map("product_variants")
+}
+
+model VariantOptionValue {
+  variantId     String
+  optionValueId String
+
+  variant     ProductVariant     @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  optionValue ProductOptionValue @relation(fields: [optionValueId], references: [id])
+
+  @@id([variantId, optionValueId])
+  @@map("variant_option_values")
+}
+
+// ─────────────────────────────────────────
+// INVENTARIO
+// ─────────────────────────────────────────
+
+enum MovementType {
+  IN
+  OUT
+  ADJUSTMENT
+  RETURN
+}
+
+model InventoryMovement {
+  id          String       @id @default(cuid())
+  variantId   String
+  type        MovementType
+  quantity    Int
+  stockBefore Int
+  stockAfter  Int
+  reason      String?
+  referenceId String?
+  createdAt   DateTime     @default(now())
+
+  variant ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@map("inventory_movements")
+}
+
+// ─────────────────────────────────────────
+// CLIENTES
+// ─────────────────────────────────────────
+
+model Customer {
+  id           String   @id @default(cuid())
+  tenantId     String
+  customerCode String?
+  name         String
+  email        String?
+  phone        String?
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  postalCode   String?
+  country      String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  transactions Transaction[]
+
+  @@unique([tenantId, customerCode])
+  @@map("customers")
+}
+
+// ─────────────────────────────────────────
+// TRANSACCIONES
+// ─────────────────────────────────────────
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+model Transaction {
+  id                String            @id @default(cuid())
+  tenantId          String
+  transactionNumber String
+  customerId        String?
+  cashierId         String
+  status            TransactionStatus @default(PENDING)
+  subtotal          Decimal           @db.Decimal(10, 2)
+  discountAmount    Decimal           @default(0) @db.Decimal(10, 2)
+  taxAmount         Decimal           @default(0) @db.Decimal(10, 2)
+  total             Decimal           @db.Decimal(10, 2)
+  notes             String?
+  metadata          Json?             @db.JsonB
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  tenant   Tenant            @relation(fields: [tenantId], references: [id])
+  customer Customer?         @relation(fields: [customerId], references: [id])
+  cashier  User              @relation("CashierTransactions", fields: [cashierId], references: [id])
+  items    TransactionItem[]
+  payments Payment[]
+  receipts Receipt[]
+
+  @@unique([tenantId, transactionNumber])
+  @@map("transactions")
+}
+
+model TransactionItem {
+  id             String  @id @default(cuid())
+  transactionId  String
+  productId      String
+  variantId      String?
+  productName    String
+  variantLabel   String?
+  sku            String?
+  quantity       Decimal @db.Decimal(10, 3)
+  unitPrice      Decimal @db.Decimal(10, 2)
+  discountAmount Decimal @default(0) @db.Decimal(10, 2)
+  taxRate        Decimal @default(0) @db.Decimal(5, 4)
+  taxAmount      Decimal @default(0) @db.Decimal(10, 2)
+  lineTotal      Decimal @db.Decimal(10, 2)
+
+  transaction Transaction     @relation(fields: [transactionId], references: [id])
+  product     Product         @relation(fields: [productId], references: [id])
+  variant     ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@map("transaction_items")
+}
+
+// ─────────────────────────────────────────
+// PAGOS
+// ─────────────────────────────────────────
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id               String        @id @default(cuid())
+  transactionId    String
+  method           PaymentMethod
+  amount           Decimal       @db.Decimal(10, 2)
+  cashTendered     Decimal?      @db.Decimal(10, 2)
+  changeGiven      Decimal?      @db.Decimal(10, 2)
+  status           PaymentStatus @default(COMPLETED)
+  gatewayName      String?
+  gatewayReference String?
+  gatewayMetadata  Json?         @db.JsonB
+  createdAt        DateTime      @default(now())
+
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+
+  @@map("payments")
+}
+
+// ─────────────────────────────────────────
+// IMPUESTOS Y DESCUENTOS
+// ─────────────────────────────────────────
+
+model TaxRate {
+  id          String  @id @default(cuid())
+  tenantId    String
+  name        String
+  rate        Decimal @db.Decimal(5, 4)
+  isInclusive Boolean @default(false)
+  isDefault   Boolean @default(false)
+  isActive    Boolean @default(true)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("tax_rates")
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+model Discount {
+  id       String       @id @default(cuid())
+  tenantId String
+  name     String
+  type     DiscountType
+  value    Decimal      @db.Decimal(10, 2)
+  isActive Boolean      @default(true)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("discounts")
+}
+
+// ─────────────────────────────────────────
+// RECIBOS Y FEATURE FLAGS
+// ─────────────────────────────────────────
+
+enum ReceiptStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model Receipt {
+  id            String        @id @default(cuid())
+  transactionId String
+  email         String
+  status        ReceiptStatus @default(PENDING)
+  sentAt        DateTime?
+  createdAt     DateTime      @default(now())
+
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+
+  @@map("receipts")
+}
+
+model FeatureFlag {
+  id         String  @id @default(cuid())
+  tenantId   String
+  featureKey String
+  isEnabled  Boolean @default(false)
+  metadata   Json?   @db.JsonB
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, featureKey])
+  @@map("feature_flags")
+}

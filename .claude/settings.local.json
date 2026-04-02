@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"/Volumes/Istav T7 2T/Desktop MAC/12 Development/SellaPlus/.github/workflows\")",
+      "Bash(mkdir -p \"/Volumes/Istav T7 2T/Desktop MAC/12 Development/SellaPlus/backend/prisma\")",
+      "Bash(mkdir -p \"/Volumes/Istav T7 2T/Desktop MAC/12 Development/SellaPlus/backend/src/common/prisma\")",
+      "Bash(mkdir -p \"/Volumes/Istav T7 2T/Desktop MAC/12 Development/SellaPlus/backend/src/common/decorators\")",
+      "Bash(mkdir -p \"/Volumes/Istav T7 2T/Desktop MAC/12 Development/SellaPlus/backend/src/common/guards\")"
+    ]
+  }
+}

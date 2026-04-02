@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sellaplus_db_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sellaplus_dev
+      POSTGRES_USER: sellaplus
+      POSTGRES_PASSWORD: sellaplus_dev
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sellaplus"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_dev_data:
