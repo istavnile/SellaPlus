@@ -1,5 +1,11 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import {
+  Controller, Get, Post, Patch, Delete,
+  Body, Param, Query, Res, UseGuards,
+  UseInterceptors, UploadedFile,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiConsumes } from '@nestjs/swagger';
+import { Response } from 'express';
 import { ProductsService } from './products.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser, JwtPayload } from '../../common/decorators/current-user.decorator';
@@ -15,18 +21,56 @@ export class ProductsController {
   @ApiOperation({ summary: 'Listar productos' })
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'categoryId', required: false })
+  @ApiQuery({ name: 'stockAlert', required: false, enum: ['low_stock', 'out_of_stock'] })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   findAll(
     @CurrentUser() user: JwtPayload,
     @Query('search') search?: string,
     @Query('categoryId') categoryId?: string,
+    @Query('stockAlert') stockAlert?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.productsService.findAll(user.tenantId, { search, categoryId });
+    return this.productsService.findAll(user.tenantId, {
+      search,
+      categoryId,
+      stockAlert,
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
+  }
+
+  @Get('export')
+  @ApiOperation({ summary: 'Exportar productos a CSV' })
+  async export(@CurrentUser() user: JwtPayload, @Res() res: Response) {
+    const csv = await this.productsService.exportCsv(user.tenantId);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="productos.csv"');
+    res.send(csv);
+  }
+
+  @Post('import')
+  @ApiOperation({ summary: 'Importar productos desde CSV' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file'))
+  async import(
+    @CurrentUser() user: JwtPayload,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.productsService.importCsv(user.tenantId, file.buffer);
   }
 
   @Get('barcode/:barcode')
   @ApiOperation({ summary: 'Buscar producto por codigo de barras' })
   findByBarcode(@CurrentUser() user: JwtPayload, @Param('barcode') barcode: string) {
     return this.productsService.findByBarcode(user.tenantId, barcode);
+  }
+
+  @Delete('bulk')
+  @ApiOperation({ summary: 'Eliminar productos en masa' })
+  bulkRemove(@CurrentUser() user: JwtPayload, @Body('ids') ids: string[]) {
+    return this.productsService.bulkRemove(user.tenantId, ids);
   }
 
   @Get(':id')

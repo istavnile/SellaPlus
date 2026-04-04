@@ -34,6 +34,14 @@ export default function LoginPage() {
     try {
       const res = await apiClient.post('/auth/login', data);
       setTokens(res.data.accessToken, res.data.refreshToken);
+      // Decode role from JWT to decide where to redirect
+      try {
+        const payload = JSON.parse(atob(res.data.accessToken.split('.')[1]));
+        if (payload.role === 'CASHIER') {
+          router.push('/pos/select');
+          return;
+        }
+      } catch { /* fall through to dashboard */ }
       router.push('/dashboard');
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Error al iniciar sesion');

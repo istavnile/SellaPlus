@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { TransactionStatus, PaymentMethod } from '@prisma/client';
+import { MailingService } from '../../common/mailing/mailing.service';
+import { generateReceiptHtml } from './templates/receipt.template';
 
 export interface CreateTransactionDto {
   customerId?: string;
@@ -32,7 +34,10 @@ export interface CreateTransactionDto {
 
 @Injectable()
 export class TransactionsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private mailing: MailingService,
+  ) {}
 
   async findAll(tenantId: string, params?: { status?: TransactionStatus; limit?: number; offset?: number }) {
     return this.prisma.transaction.findMany({
@@ -127,5 +132,73 @@ export class TransactionsService {
       where: { id },
       data: { status: TransactionStatus.CANCELLED },
     });
+  }
+
+  async sendReceipt(tenantId: string, transactionId: string, email: string) {
+    const transaction = await this.prisma.transaction.findFirst({
+      where: { id: transactionId, tenantId },
+      include: {
+        customer: true,
+        cashier: { select: { name: true } },
+        items: true,
+        payments: true,
+      },
+    });
+
+    if (!transaction) throw new NotFoundException('Transacción no encontrada');
+
+    const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
+
+    // Build logo attachment if tenant has a logo (base64 data URL → CID attachment)
+    const attachments: import('../../common/mailing/mailing.service').MailAttachment[] = [];
+    let hasLogo = false;
+    if (tenant?.logoUrl && tenant.logoUrl.startsWith('data:')) {
+      try {
+        const matches = tenant.logoUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (matches) {
+          const mimeType = matches[1];
+          const base64Data = matches[2];
+          const ext = mimeType.split('/')[1] ?? 'png';
+          attachments.push({
+            filename: `logo.${ext}`,
+            content: Buffer.from(base64Data, 'base64'),
+            cid: 'receipt_logo',
+          });
+          hasLogo = true;
+        }
+      } catch { /* ignore logo errors */ }
+    }
+
+    const html = generateReceiptHtml({
+      transaction: transaction as any,
+      tenantName: tenant?.name || 'SellaPlus',
+      tenantAddress: tenant?.address || null,
+      tenantPhone: tenant?.phone || null,
+      receiptHeader: tenant?.receiptHeader || null,
+      receiptFooter: tenant?.receiptFooter || null,
+      hasLogo,
+    });
+
+    const smtpUser = process.env.SMTP_USER || '';
+    const from = `${tenant?.name || 'SellaPlus'} <${smtpUser}>`;
+
+    await this.mailing.sendMail(
+      email,
+      `Tu recibo de ${tenant?.name || 'SellaPlus'}`,
+      html,
+      { from, attachments },
+    );
+
+    // Track that receipt was sent
+    await this.prisma.receipt.create({
+      data: {
+        transactionId: transaction.id,
+        email,
+        status: 'SENT',
+        sentAt: new Date(),
+      }
+    });
+
+    return { message: 'Recibo enviado con éxito' };
   }
 }

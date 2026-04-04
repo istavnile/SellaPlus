@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { TenantsService } from './tenants.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -21,7 +21,7 @@ export class TenantsController {
   @ApiOperation({ summary: 'Actualizar configuracion del negocio' })
   updateSettings(
     @CurrentUser() user: JwtPayload,
-    @Body() body: Partial<{ name: string; currency: string; timezone: string; locale: string }>,
+    @Body() body: Partial<{ name: string; currency: string; timezone: string; locale: string; logoUrl: string; address: string; phone: string; receiptHeader: string; receiptFooter: string }>,
   ) {
     return this.tenantsService.updateSettings(user.tenantId, body);
   }
@@ -34,5 +34,55 @@ export class TenantsController {
     @Body('isEnabled') isEnabled: boolean,
   ) {
     return this.tenantsService.toggleFeatureFlag(user.tenantId, key, isEnabled);
+  }
+
+  // ── Payment Methods ──────────────────────────────────────────────────────
+
+  @Get('payment-methods')
+  @ApiOperation({ summary: 'Listar métodos de pago del negocio' })
+  getPaymentMethods(@CurrentUser() user: JwtPayload) {
+    return this.tenantsService.getPaymentMethods(user.tenantId);
+  }
+
+  @Post('payment-methods')
+  @ApiOperation({ summary: 'Añadir método de pago' })
+  createPaymentMethod(
+    @CurrentUser() user: JwtPayload,
+    @Body() body: { name: string; type: string },
+  ) {
+    return this.tenantsService.createPaymentMethod(user.tenantId, body);
+  }
+
+  @Patch('payment-methods/:id')
+  @ApiOperation({ summary: 'Actualizar método de pago' })
+  updatePaymentMethod(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() body: Partial<{ name: string; type: string; isEnabled: boolean; sortOrder: number }>,
+  ) {
+    return this.tenantsService.updatePaymentMethod(user.tenantId, id, body);
+  }
+
+  @Delete('payment-methods/:id')
+  @ApiOperation({ summary: 'Eliminar método de pago' })
+  deletePaymentMethod(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return this.tenantsService.deletePaymentMethod(user.tenantId, id);
+  }
+
+  // ── Role Permissions ──────────────────────────────────────────────────────
+
+  @Get('role-permissions')
+  @ApiOperation({ summary: 'Obtener permisos por rol' })
+  getRolePermissions(@CurrentUser() user: JwtPayload) {
+    return this.tenantsService.getRolePermissions(user.tenantId);
+  }
+
+  @Patch('role-permissions')
+  @ApiOperation({ summary: 'Actualizar un permiso de rol' })
+  setRolePermission(
+    @CurrentUser() user: JwtPayload,
+    @Body() body: { role: string; section: string; isEnabled: boolean },
+  ) {
+    return this.tenantsService.setRolePermission(user.tenantId, body.role, body.section, body.isEnabled);
   }
 }

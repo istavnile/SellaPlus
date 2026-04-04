@@ -18,7 +18,11 @@ model Tenant {
   currency  String   @default("USD")
   timezone  String   @default("UTC")
   locale    String   @default("es")
-  logoUrl   String?
+  logoUrl         String?
+  address         String?
+  phone           String?
+  receiptHeader   String?
+  receiptFooter   String?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -30,7 +34,10 @@ model Tenant {
   transactions Transaction[]
   taxRates     TaxRate[]
   discounts    Discount[]
-  featureFlags FeatureFlag[]
+  featureFlags     FeatureFlag[]
+  paymentMethods   TenantPaymentMethod[]
+  rolePermissions  RolePermission[]
+  posDevices       PosDevice[]
 
   @@map("tenants")
 }
@@ -42,6 +49,7 @@ model Tenant {
 enum UserRole {
   OWNER
   ADMIN
+  MANAGER
   CASHIER
 }
 
@@ -52,6 +60,7 @@ model User {
   passwordHash String
   name         String
   role         UserRole @default(CASHIER)
+  pinHash      String?
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -101,6 +110,9 @@ model Product {
   basePrice           Decimal  @db.Decimal(10, 2)
   trackStock          Boolean  @default(true)
   stockAlertThreshold Int?     @default(5)
+  posRepresentation   String   @default("color_shape") // "color_shape" | "image"
+  posColor            String   @default("#e5e7eb")
+  posShape            String   @default("square")      // "square" | "circle" | "stamp" | "hexagon"
   isActive            Boolean  @default(true)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
@@ -395,6 +407,19 @@ model Receipt {
   @@map("receipts")
 }
 
+model TenantPaymentMethod {
+  id        String  @id @default(cuid())
+  tenantId  String
+  name      String
+  type      String  // maps to PaymentMethod enum: CASH | CARD | TRANSFER | OTHER
+  isEnabled Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("tenant_payment_methods")
+}
+
 model FeatureFlag {
   id         String  @id @default(cuid())
   tenantId   String
@@ -406,4 +431,32 @@ model FeatureFlag {
 
   @@unique([tenantId, featureKey])
   @@map("feature_flags")
+}
+
+model PosDevice {
+  id               String   @id @default(cuid())
+  tenantId         String
+  name             String
+  isActive         Boolean  @default(true)
+  currentCashierId String?
+  sessionToken     String?  @unique
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("pos_devices")
+}
+
+model RolePermission {
+  id        String  @id @default(cuid())
+  tenantId  String
+  role      String  // OWNER | ADMIN | MANAGER | CASHIER
+  section   String  // dashboard | products | customers | reports | employees | settings | pos
+  isEnabled Boolean @default(false)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, role, section])
+  @@map("role_permissions")
 }

@@ -18,16 +18,21 @@ async function main() {
     },
   });
 
-  const passwordHash = await bcrypt.hash('Admin1234!', 10);
+  const passwordHash = await bcrypt.hash('$123QWE$', 10);
+
+  // Remove old demo admin if it exists (email change)
+  await prisma.user.deleteMany({
+    where: { tenantId: tenant.id, email: 'admin@demo.com' },
+  });
 
   await prisma.user.upsert({
-    where: { tenantId_email: { tenantId: tenant.id, email: 'admin@demo.com' } },
-    update: {},
+    where: { tenantId_email: { tenantId: tenant.id, email: 'istavnile@gmail.com' } },
+    update: { passwordHash, name: 'Istav', role: UserRole.OWNER },
     create: {
       tenantId: tenant.id,
-      email: 'admin@demo.com',
+      email: 'istavnile@gmail.com',
       passwordHash,
-      name: 'Admin Demo',
+      name: 'Istav',
       role: UserRole.OWNER,
     },
   });
@@ -56,7 +61,7 @@ async function main() {
     });
   }
 
-  console.log('Seed complete. Login: admin@demo.com / Admin1234!');
+  console.log('Seed complete. Login: istavnile@gmail.com / $123QWE$');
 }
 
 main()

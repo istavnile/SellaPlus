@@ -47,4 +47,14 @@ export class TransactionsController {
   cancel(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.transactionsService.cancel(user.tenantId, id);
   }
+
+  @Post(':id/send-receipt')
+  @ApiOperation({ summary: 'Enviar recibo por correo' })
+  sendReceipt(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body('email') email: string,
+  ) {
+    return this.transactionsService.sendReceipt(user.tenantId, id, email);
+  }
 }

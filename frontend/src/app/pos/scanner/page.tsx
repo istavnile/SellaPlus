@@ -1,9 +1,16 @@
 'use client';
 
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+
 export default function ScannerPosPage() {
   return (
     <div className="flex flex-col h-full">
       <div className="bg-white border-b border-gray-200 p-4 flex items-center gap-4">
+        <Link href="/products" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors bg-gray-50 hover:bg-gray-100 px-3 py-2 rounded-lg border border-gray-200">
+          <ArrowLeft size={16} />
+          Volver
+        </Link>
         <input
           type="text"
           placeholder="Buscar por codigo de barras o nombre..."
