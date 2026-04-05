@@ -322,6 +322,7 @@ export class ProductsService {
         barcode:   data['barcode'] || undefined,
         basePrice: parseFloat(data['basePrice']) || 0,
         costPrice: parseFloat(data['costPrice']) || 0,
+        isActive:  true,
         ...(categoryId && { categoryId }),
       };
 
