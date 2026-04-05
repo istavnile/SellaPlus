@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { TransactionsService, CreateTransactionDto } from './transactions.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -56,5 +56,11 @@ export class TransactionsController {
     @Body('email') email: string,
   ) {
     return this.transactionsService.sendReceipt(user.tenantId, id, email);
+  }
+
+  @Delete('reset')
+  @ApiOperation({ summary: 'Borrar TODAS las ventas del negocio (acción irreversible)' })
+  resetAll(@CurrentUser() user: JwtPayload) {
+    return this.transactionsService.resetAllTransactions(user.tenantId);
   }
 }
