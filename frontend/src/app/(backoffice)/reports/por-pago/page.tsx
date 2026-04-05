@@ -127,7 +127,7 @@ export default function PorPagoPage() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </table></div>
              )}
           </div>
 

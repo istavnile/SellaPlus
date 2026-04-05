@@ -133,7 +133,7 @@ export default function PorEmpleadoPage() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </table></div>
              )}
           </div>
 

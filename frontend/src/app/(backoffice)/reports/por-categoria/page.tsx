@@ -121,7 +121,7 @@ export default function PorCategoriaPage() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </table></div>
              )}
           </div>
 
