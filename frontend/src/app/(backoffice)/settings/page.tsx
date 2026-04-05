@@ -236,68 +236,52 @@ function MetodosPagoPanel() {
 
   if (view === 'edit') {
     return (
-      <div className="flex flex-col h-full -m-6 bg-[#f4f6f8]">
-        <div className="bg-brand-600 text-white px-6 py-4 flex items-center shadow-sm">
-          <h1 className="text-xl font-normal">{current?.id ? 'Editar método de pago' : 'Añadir método de pago'}</h1>
+      <div className="flex flex-col -m-4 md:-m-6">
+        <div className="bg-brand-600 text-white px-4 md:px-6 py-4 flex items-center shadow-sm rounded-t-xl">
+          <h1 className="text-lg font-medium">{current?.id ? 'Editar método de pago' : 'Añadir método de pago'}</h1>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center p-10 overflow-y-auto">
-          <div className="bg-white rounded-lg border border-gray-100 shadow-xl w-full max-w-xl overflow-hidden">
-            <div className="flex flex-col items-center p-12">
-              <div className="w-24 h-24 bg-brand-50 rounded-full flex items-center justify-center mb-12 shadow-sm border border-brand-100">
-                <div className="relative">
-                  <CreditCard size={48} className="text-brand-600" />
-                  <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 border border-brand-100">
-                    <DollarSign size={16} className="text-brand-600" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="w-full space-y-12">
-                <div className="relative">
-                  <select
-                    value={current?.type || 'CASH'}
-                    onChange={(e) => setCurrent({ ...current, type: e.target.value })}
-                    className="w-full border-b border-gray-200 py-3 text-sm text-gray-700 focus:outline-none focus:border-brand-500 appearance-none bg-transparent"
-                  >
-                    <option value="CASH">Efectivo</option>
-                    <option value="CARD">Tarjeta</option>
-                    <option value="TRANSFER">Transferencia / Billetera digital</option>
-                    <option value="OTHER">Otro</option>
-                  </select>
-                  <label className="absolute -top-5 left-0 text-xs text-gray-400">Tipo de pago</label>
-                  <div className="absolute right-0 top-3 pointer-events-none">
-                    <ChevronDown className="text-gray-400" size={16} />
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <input
-                    autoFocus
-                    type="text"
-                    value={current?.name || ''}
-                    onChange={(e) => setCurrent({ ...current, name: e.target.value })}
-                    className="w-full border-b border-gray-200 py-3 text-sm text-gray-700 placeholder-transparent focus:outline-none focus:border-brand-500 bg-transparent"
-                    placeholder="Nombre"
-                    id="payment-name-input"
-                  />
-                  <label htmlFor="payment-name-input" className="absolute -top-5 left-0 text-xs text-gray-400 font-medium">Nombre que verá el cajero</label>
-                </div>
-              </div>
+        <div className="p-4 md:p-8 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipo de pago</label>
+            <div className="relative">
+              <select
+                value={current?.type || 'CASH'}
+                onChange={(e) => setCurrent({ ...current, type: e.target.value })}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 appearance-none bg-white"
+              >
+                <option value="CASH">Efectivo</option>
+                <option value="CARD">Tarjeta</option>
+                <option value="TRANSFER">Transferencia / Billetera digital</option>
+                <option value="OTHER">Otro</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 w-full max-w-xl mt-8">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre que verá el cajero</label>
+            <input
+              autoFocus
+              type="text"
+              value={current?.name || ''}
+              onChange={(e) => setCurrent({ ...current, name: e.target.value })}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
+              placeholder="Ej: Efectivo, Visa, Yape..."
+            />
+          </div>
+
+          <div className="flex gap-3 pt-2">
             <button
               onClick={() => setView('list')}
-              className="bg-white hover:bg-gray-50 text-gray-700 font-bold px-8 py-3 rounded-lg border border-gray-200 text-sm transition-all"
+              className="flex-1 bg-white hover:bg-gray-50 text-gray-700 font-medium px-4 py-3 rounded-xl border border-gray-200 text-sm transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="bg-brand-600 hover:bg-brand-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg text-sm transition-all disabled:opacity-50"
+              className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-medium px-4 py-3 rounded-xl text-sm transition-colors disabled:opacity-50"
             >
               {saving ? 'Guardando...' : 'Guardar'}
             </button>
@@ -813,7 +797,6 @@ export default function SettingsPage() {
       {/* ── Panel derecho ───────────────────────────────────────── */}
       <div className="flex-1 min-w-0">
         <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-6 overflow-y-auto">
-          <h2 className="text-base font-semibold text-gray-700 mb-4 md:hidden">{activeLabel}</h2>
           {PANELS[active]}
         </div>
       </div>

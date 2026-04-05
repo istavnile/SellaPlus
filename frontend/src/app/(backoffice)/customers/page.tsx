@@ -76,15 +76,16 @@ export default function CustomersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Clientes</h1>
+        <div className="flex items-center gap-2">
           <ImportExportButtons entity="customers" onImportDone={load} />
           <Link
             href="/customers/new"
-            className="bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors"
+            className="bg-brand-600 text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors whitespace-nowrap"
           >
-            + Nuevo Cliente
+            <span className="hidden sm:inline">+ Nuevo Cliente</span>
+            <span className="sm:hidden">+ Nuevo</span>
           </Link>
         </div>
       </div>

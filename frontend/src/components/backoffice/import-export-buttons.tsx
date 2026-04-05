@@ -105,19 +105,21 @@ export function ImportExportButtons({ entity, onImportDone }: Props) {
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={importing}
+          title="Importar CSV"
           className="flex items-center gap-1.5 text-sm font-medium text-gray-600 border border-gray-300 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
         >
           {importing ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
-          {importing ? 'Importando...' : 'Importar CSV'}
+          <span className="hidden sm:inline">{importing ? 'Importando...' : 'Importar CSV'}</span>
         </button>
 
         <button
           onClick={handleExport}
           disabled={exporting}
+          title="Exportar CSV"
           className="flex items-center gap-1.5 text-sm font-medium text-gray-600 border border-gray-300 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
         >
           {exporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-          {exporting ? 'Exportando...' : 'Exportar CSV'}
+          <span className="hidden sm:inline">{exporting ? 'Exportando...' : 'Exportar CSV'}</span>
         </button>
       </div>
 

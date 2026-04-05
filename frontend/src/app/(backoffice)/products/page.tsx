@@ -192,9 +192,9 @@ export default function ProductsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Lista de artículos</h1>
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Lista de artículos</h1>
+        <div className="flex items-center gap-2">
           {selected.size > 0 && (
             <button
               onClick={handleBulkDeleteClick}
@@ -202,15 +202,17 @@ export default function ProductsPage() {
               className="flex items-center gap-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
             >
               {deleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
-              Eliminar ({selected.size})
+              <span className="hidden sm:inline">Eliminar ({selected.size})</span>
+              <span className="sm:hidden">({selected.size})</span>
             </button>
           )}
           <ImportExportButtons entity="products" onImportDone={load} />
           <Link
             href="/products/new"
-            className="bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors"
+            className="bg-brand-600 text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors whitespace-nowrap"
           >
-            + Agregar artículo
+            <span className="hidden sm:inline">+ Agregar artículo</span>
+            <span className="sm:hidden">+ Nuevo</span>
           </Link>
         </div>
       </div>
