@@ -242,7 +242,7 @@ export default function TouchPosPage() {
   const load = useCallback(() => {
     setLoading(true);
     Promise.all([
-      apiClient.get('/products', { params: { limit: '500' } }),
+      apiClient.get('/products', { params: { limit: '500', includeImages: true } }),
       apiClient.get('/categories'),
     ]).then(([pr, cr]) => {
       const raw = pr.data;

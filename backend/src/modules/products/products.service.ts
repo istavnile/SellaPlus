@@ -43,6 +43,7 @@ export class ProductsService {
       limit?: number;
       sortBy?: string;
       sortOrder?: 'asc' | 'desc';
+      includeImages?: boolean | string;
     },
   ) {
     const page  = params?.page  && params.page  > 0 ? params.page  : 1;
@@ -90,7 +91,10 @@ export class ProductsService {
           isActive: true,
           stockAlertThreshold: true,
           category: { select: { id: true, name: true } },
-          variants: { select: { stockQty: true } },
+          variants: { select: { id: true, stockQty: true, priceOverride: true } },
+          ...( (params?.includeImages === true || params?.includeImages === 'true') && {
+            images: { take: 1, select: { url: true } },
+          }),
         },
         orderBy,
         skip,
