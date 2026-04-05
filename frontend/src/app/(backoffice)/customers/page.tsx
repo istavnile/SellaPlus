@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import { Search, Trash2 } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 import { ImportExportButtons } from '@/components/backoffice/import-export-buttons';
 import { ConfirmModal } from '@/components/backoffice/confirm-modal';
+import { CustomerDrawer } from '@/components/backoffice/customer-drawer';
 
 interface Customer {
   id: string; name: string; email?: string; phone?: string;
@@ -19,6 +19,14 @@ export default function CustomersPage() {
   const [selected, setSelected]   = useState<Set<string>>(new Set());
   const [deleting, setDeleting]   = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  // Drawer state
+  const [drawerOpen, setDrawerOpen]         = useState(false);
+  const [drawerCustomerId, setDrawerCustomerId] = useState<string | null>(null);
+
+  const openCreate = () => { setDrawerCustomerId(null); setDrawerOpen(true); };
+  const openEdit   = (id: string) => { setDrawerCustomerId(id); setDrawerOpen(true); };
+  const closeDrawer = () => setDrawerOpen(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -62,7 +70,7 @@ export default function CustomersPage() {
   async function bulkDelete() {
     const ids = Array.from(selected);
     if (!ids.length) return;
-    
+
     setDeleting(true);
     try {
       await apiClient.delete('/customers/bulk', { data: { ids } });
@@ -80,13 +88,13 @@ export default function CustomersPage() {
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Clientes</h1>
         <div className="flex items-center gap-2">
           <ImportExportButtons entity="customers" onImportDone={load} />
-          <Link
-            href="/customers/new"
+          <button
+            onClick={openCreate}
             className="bg-brand-600 text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors whitespace-nowrap"
           >
             <span className="hidden sm:inline">+ Nuevo Cliente</span>
             <span className="sm:hidden">+ Nuevo</span>
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -122,12 +130,15 @@ export default function CustomersPage() {
             <div className="py-10 text-center text-gray-400 text-sm">{search ? 'Sin resultados.' : 'No hay clientes todavía.'}</div>
           ) : filtered.map((c) => (
             <div key={c.id} className={`flex items-center gap-3 px-4 py-3 ${selected.has(c.id) ? 'bg-red-50/40' : ''}`}>
-              <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)}
-                className="rounded border-gray-300 text-brand-600 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <Link href={`/customers/${c.id}`} className="font-medium text-gray-800 text-sm block truncate">
-                  {c.name}
-                </Link>
+              <input
+                type="checkbox"
+                checked={selected.has(c.id)}
+                onChange={() => toggle(c.id)}
+                onClick={(e) => e.stopPropagation()}
+                className="rounded border-gray-300 text-brand-600 shrink-0"
+              />
+              <div className="flex-1 min-w-0" onClick={() => openEdit(c.id)}>
+                <p className="font-medium text-gray-800 text-sm block truncate cursor-pointer hover:text-brand-600">{c.name}</p>
                 <div className="flex flex-col gap-0.5 mt-0.5">
                   {c.phone && <span className="text-xs text-gray-400">{c.phone}</span>}
                   {c.email && <span className="text-xs text-gray-400 truncate">{c.email}</span>}
@@ -140,44 +151,48 @@ export default function CustomersPage() {
 
         {/* Desktop table */}
         <div className="hidden sm:block overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-gray-500 border-b border-gray-100">
-              <th className="px-4 py-3 w-10">
-                <input type="checkbox" checked={allChecked} onChange={toggleAll}
-                  className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
-              </th>
-              <th className="px-4 py-3 font-medium">Nombre</th>
-              <th className="px-4 py-3 font-medium">Email</th>
-              <th className="px-4 py-3 font-medium">Teléfono</th>
-              <th className="px-4 py-3 font-medium hidden md:table-cell">Ciudad</th>
-              <th className="px-4 py-3 font-medium hidden md:table-cell">Código</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={6} className="text-center text-gray-400 py-10">Cargando...</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={6} className="text-center text-gray-400 py-10">
-                {search ? 'Sin resultados.' : 'No hay clientes todavía.'}
-              </td></tr>
-            ) : filtered.map((c) => (
-              <tr key={c.id} className={`border-b border-gray-50 transition-colors ${selected.has(c.id) ? 'bg-red-50/40' : 'hover:bg-gray-50'}`}>
-                <td className="px-4 py-3">
-                  <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)}
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-500 border-b border-gray-100">
+                <th className="px-4 py-3 w-10">
+                  <input type="checkbox" checked={allChecked} onChange={toggleAll}
                     className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
-                </td>
-                <td className="px-4 py-3">
-                  <Link href={`/customers/${c.id}`} className="font-medium text-gray-800 hover:text-brand-600">{c.name}</Link>
-                </td>
-                <td className="px-4 py-3 text-gray-500">{c.email ?? '—'}</td>
-                <td className="px-4 py-3 text-gray-500">{c.phone ?? '—'}</td>
-                <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{c.city ?? '—'}</td>
-                <td className="px-4 py-3 text-gray-400 font-mono text-xs hidden md:table-cell">{c.customerCode ?? '—'}</td>
+                </th>
+                <th className="px-4 py-3 font-medium">Nombre</th>
+                <th className="px-4 py-3 font-medium">Email</th>
+                <th className="px-4 py-3 font-medium">Teléfono</th>
+                <th className="px-4 py-3 font-medium hidden md:table-cell">Ciudad</th>
+                <th className="px-4 py-3 font-medium hidden md:table-cell">Código</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={6} className="text-center text-gray-400 py-10">Cargando...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan={6} className="text-center text-gray-400 py-10">
+                  {search ? 'Sin resultados.' : 'No hay clientes todavía.'}
+                </td></tr>
+              ) : filtered.map((c) => (
+                <tr
+                  key={c.id}
+                  onClick={() => openEdit(c.id)}
+                  className={`border-b border-gray-50 transition-colors cursor-pointer ${selected.has(c.id) ? 'bg-red-50/40' : 'hover:bg-gray-50'}`}
+                >
+                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                    <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)}
+                      className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="font-medium text-gray-800 hover:text-brand-600">{c.name}</span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500">{c.email ?? '—'}</td>
+                  <td className="px-4 py-3 text-gray-500">{c.phone ?? '—'}</td>
+                  <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{c.city ?? '—'}</td>
+                  <td className="px-4 py-3 text-gray-400 font-mono text-xs hidden md:table-cell">{c.customerCode ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -193,6 +208,14 @@ export default function CustomersPage() {
           </>
         }
         confirmText="Sí, eliminar"
+      />
+
+      {/* Customer drawer */}
+      <CustomerDrawer
+        open={drawerOpen}
+        customerId={drawerCustomerId}
+        onClose={closeDrawer}
+        onSaved={load}
       />
     </div>
   );

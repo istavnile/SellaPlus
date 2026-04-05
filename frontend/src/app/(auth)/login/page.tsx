@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, LayoutDashboard, Store } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 import { useAuthStore } from '@/stores/auth.store';
 
@@ -22,6 +22,7 @@ export default function LoginPage() {
   const setTokens = useAuthStore((s) => s.setTokens);
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [showModePicker, setShowModePicker] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -32,11 +33,20 @@ export default function LoginPage() {
     try {
       const res = await apiClient.post('/auth/login', data);
       setTokens(res.data.accessToken, res.data.refreshToken);
+
+      let role = '';
       try {
         const payload = JSON.parse(atob(res.data.accessToken.split('.')[1]));
-        if (payload.role === 'CASHIER') { router.push('/pos/select'); return; }
-      } catch { /* fall through */ }
-      router.push('/dashboard');
+        role = payload.role ?? '';
+      } catch { /* ignore */ }
+
+      if (role === 'CASHIER') { router.push('/pos/select'); return; }
+
+      if (window.innerWidth < 768) {
+        setShowModePicker(true);
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Error al iniciar sesion');
     } finally {
@@ -48,9 +58,7 @@ export default function LoginPage() {
     <div className="min-h-[100dvh] flex flex-col bg-[#1a2fa0]" style={{
       background: 'linear-gradient(160deg, #0f1f7a 0%, #2241c8 50%, #3b5bdb 100%)',
     }}>
-      {/* Top decorative area */}
       <div className="flex-1 flex flex-col items-center justify-center px-5 py-8">
-        {/* Logo */}
         <div className="mb-8 text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-sm mb-4 shadow-lg">
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -65,65 +73,78 @@ export default function LoginPage() {
           <p className="text-blue-200 text-sm mt-1">Tu punto de venta inteligente</p>
         </div>
 
-        {/* Card */}
-        <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-7">
-          <h2 className="text-xl font-semibold text-gray-800 mb-1">Bienvenido</h2>
-          <p className="text-gray-400 text-sm mb-6">Inicia sesión en tu cuenta</p>
+        {showModePicker ? (
+          /* ── Destination picker ────────────────────────────── */
+          <div className="w-full max-w-sm">
+            <p className="text-white/70 text-sm text-center mb-5 font-medium">¿A dónde quieres ir?</p>
+            <div className="space-y-3">
+              {/* Backoffice */}
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="w-full group flex items-center gap-4 bg-white/10 hover:bg-white/20 active:bg-white/25 backdrop-blur-sm border border-white/20 rounded-2xl p-5 text-left transition-all duration-150 shadow-lg"
+              >
+                <div className="shrink-0 w-14 h-14 rounded-xl bg-white/15 flex items-center justify-center">
+                  <LayoutDashboard size={26} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-white font-semibold text-base">Backoffice</p>
+                  <p className="text-blue-200 text-xs mt-0.5">Gestión, reportes y configuración</p>
+                </div>
+                <svg className="ml-auto text-white/50" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
-              <input
-                {...register('email')}
-                type="email"
-                autoComplete="email"
-                inputMode="email"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 bg-gray-50/50 transition-colors"
-                placeholder="tu@negocio.com"
-              />
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+              {/* POS */}
+              <button
+                onClick={() => router.push('/pos/select')}
+                className="w-full group flex items-center gap-4 bg-white/10 hover:bg-white/20 active:bg-white/25 backdrop-blur-sm border border-white/20 rounded-2xl p-5 text-left transition-all duration-150 shadow-lg"
+              >
+                <div className="shrink-0 w-14 h-14 rounded-xl bg-white/15 flex items-center justify-center">
+                  <Store size={26} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-white font-semibold text-base">Punto de Venta</p>
+                  <p className="text-blue-200 text-xs mt-0.5">Cobrar y registrar ventas</p>
+                </div>
+                <svg className="ml-auto text-white/50" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Contraseña</label>
-              <div className="relative">
-                <input
-                  {...register('password')}
-                  type={showPass ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 bg-gray-50/50 transition-colors"
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
-                >
-                  {showPass ? <EyeOff size={17} /> : <Eye size={17} />}
-                </button>
+          </div>
+        ) : (
+          /* ── Login form ────────────────────────────────────── */
+          <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-7">
+            <h2 className="text-xl font-semibold text-gray-800 mb-1">Bienvenido</h2>
+            <p className="text-gray-400 text-sm mb-6">Inicia sesión en tu cuenta</p>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+                <input {...register('email')} type="email" autoComplete="email" inputMode="email" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 bg-gray-50/50 transition-colors" placeholder="tu@negocio.com" />
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
               </div>
-              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50 mt-2 text-sm shadow-sm"
-            >
-              {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-            </button>
-          </form>
-
-          <p className="text-center text-sm text-gray-400 mt-5">
-            ¿No tienes cuenta?{' '}
-            <a href="/register" className="text-brand-600 font-medium hover:underline">
-              Registra tu negocio
-            </a>
-          </p>
-        </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Contraseña</label>
+                <div className="relative">
+                  <input {...register('password')} type={showPass ? 'text' : 'password'} autoComplete="current-password" className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 bg-gray-50/50 transition-colors" placeholder="••••••••" />
+                  <button type="button" onClick={() => setShowPass((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1">
+                    {showPass ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                </div>
+                {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+              </div>
+              <button type="submit" disabled={loading} className="w-full bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50 mt-2 text-sm shadow-sm">
+                {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+              </button>
+            </form>
+            <p className="text-center text-sm text-gray-400 mt-5">
+              ¿No tienes cuenta?{' '}
+              <a href="/register" className="text-brand-600 font-medium hover:underline">Registra tu negocio</a>
+            </p>
+          </div>
+        )}
       </div>
-
-      {/* Bottom safe area */}
       <div className="pb-safe h-4" />
     </div>
   );
