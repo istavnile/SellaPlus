@@ -755,7 +755,7 @@ const PANELS: Record<Section, React.ReactNode> = {
 
 export default function SettingsPage() {
   const [active, setActive] = useState<Section>('funciones');
-  const allItems = NAV.flatMap((g) => g.items);
+  const allItems = NAV.flatMap((g) => g.items as { id: string; label: string }[]);
   const activeLabel = allItems.find((i) => i.id === active)?.label ?? '';
 
   return (
