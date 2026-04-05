@@ -180,7 +180,7 @@ export default function PorArticuloPage() {
                       tickFormatter={(v) => `S/${v}`}
                     />
                     <Tooltip
-                      formatter={(value: number) => [money(value), 'Ventas netas']}
+                      formatter={(value) => [money(Number(value)), 'Ventas netas']}
                       contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }}
                     />
                     <Bar dataKey="revenue" radius={[4, 4, 0, 0]} maxBarSize={48}>
