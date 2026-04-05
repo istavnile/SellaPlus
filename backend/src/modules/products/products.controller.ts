@@ -31,6 +31,9 @@ export class ProductsController {
     @Query('stockAlert') stockAlert?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
+    @Query('includeImages') includeImages?: string,
   ) {
     return this.productsService.findAll(user.tenantId, {
       search,
@@ -38,6 +41,9 @@ export class ProductsController {
       stockAlert,
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
+      sortBy,
+      sortOrder,
+      includeImages,
     });
   }
 
