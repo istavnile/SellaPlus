@@ -755,15 +755,34 @@ const PANELS: Record<Section, React.ReactNode> = {
 
 export default function SettingsPage() {
   const [active, setActive] = useState<Section>('funciones');
+  const allItems = NAV.flatMap((g) => g.items);
+  const activeLabel = allItems.find((i) => i.id === active)?.label ?? '';
 
   return (
-    <div className="flex gap-6 h-full -m-6 p-6">
-      {/* ── Panel izquierdo ─────────────────────────────────────── */}
-      <div className="w-72 shrink-0">
+    <div className="flex flex-col md:flex-row gap-6 h-full -m-6 p-4 md:p-6">
+
+      {/* ── Mobile: select dropdown ─────────────────────────────── */}
+      <div className="md:hidden">
+        <select
+          value={active}
+          onChange={(e) => setActive(e.target.value as Section)}
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500/30 appearance-none"
+        >
+          {NAV.map(({ group, items }) => (
+            <optgroup key={group} label={group}>
+              {items.map(({ id, label }) => (
+                <option key={id} value={id}>{label}</option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      </div>
+
+      {/* ── Desktop: sidebar ────────────────────────────────────── */}
+      <div className="hidden md:block w-72 shrink-0">
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           {NAV.map(({ group, subtitle, icon: Icon, items }) => (
             <div key={group}>
-              {/* Cabecera de grupo */}
               <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
                 <div className="w-9 h-9 rounded-full bg-gray-400 flex items-center justify-center">
                   <Icon size={18} className="text-white" />
@@ -773,7 +792,6 @@ export default function SettingsPage() {
                   <p className="text-xs text-gray-400">{subtitle}</p>
                 </div>
               </div>
-              {/* Items */}
               {items.map(({ id, label }) => (
                 <button
                   key={id}
@@ -795,7 +813,8 @@ export default function SettingsPage() {
 
       {/* ── Panel derecho ───────────────────────────────────────── */}
       <div className="flex-1 min-w-0">
-        <div className="bg-white rounded-xl border border-gray-200 p-6 h-full overflow-y-auto">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-6 overflow-y-auto">
+          <h2 className="text-base font-semibold text-gray-700 mb-4 md:hidden">{activeLabel}</h2>
           {PANELS[active]}
         </div>
       </div>

@@ -114,6 +114,7 @@ export default function CustomersPage() {
         </div>
 
         {/* Table */}
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-gray-500 border-b border-gray-100">
@@ -126,10 +127,10 @@ export default function CustomersPage() {
                 />
               </th>
               <th className="px-4 py-3 font-medium">Nombre</th>
-              <th className="px-4 py-3 font-medium">Email</th>
-              <th className="px-4 py-3 font-medium">Teléfono</th>
-              <th className="px-4 py-3 font-medium">Ciudad</th>
-              <th className="px-4 py-3 font-medium">Código</th>
+              <th className="px-4 py-3 font-medium hidden sm:table-cell">Email</th>
+              <th className="px-4 py-3 font-medium hidden sm:table-cell">Teléfono</th>
+              <th className="px-4 py-3 font-medium hidden md:table-cell">Ciudad</th>
+              <th className="px-4 py-3 font-medium hidden md:table-cell">Código</th>
             </tr>
           </thead>
           <tbody>
@@ -156,15 +157,17 @@ export default function CustomersPage() {
                   <Link href={`/customers/${c.id}`} className="font-medium text-gray-800 hover:text-brand-600">
                     {c.name}
                   </Link>
+                  <p className="text-xs text-gray-400 sm:hidden">{c.phone ?? c.email ?? ''}</p>
                 </td>
-                <td className="px-4 py-3 text-gray-500">{c.email ?? '—'}</td>
-                <td className="px-4 py-3 text-gray-500">{c.phone ?? '—'}</td>
-                <td className="px-4 py-3 text-gray-500">{c.city ?? '—'}</td>
-                <td className="px-4 py-3 text-gray-400 font-mono text-xs">{c.customerCode ?? '—'}</td>
+                <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">{c.email ?? '—'}</td>
+                <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">{c.phone ?? '—'}</td>
+                <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{c.city ?? '—'}</td>
+                <td className="px-4 py-3 text-gray-400 font-mono text-xs hidden md:table-cell">{c.customerCode ?? '—'}</td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       <ConfirmModal

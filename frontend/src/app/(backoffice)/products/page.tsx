@@ -266,6 +266,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Table */}
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-gray-500 border-b border-gray-100">
@@ -283,20 +284,20 @@ export default function ProductsPage() {
               >
                 Nombre del artículo <SortArrow col="name" />
               </th>
-              <th className="px-4 py-3 font-medium">Categoría</th>
+              <th className="px-4 py-3 font-medium hidden md:table-cell">Categoría</th>
               <th
                 className="px-4 py-3 font-medium text-right cursor-pointer select-none hover:text-gray-900"
                 onClick={() => handleSort('basePrice')}
               >
                 Precio <SortArrow col="basePrice" />
               </th>
-              <th className="px-4 py-3 font-medium text-right">Coste</th>
-              <th className="px-4 py-3 font-medium text-right">Margen</th>
+              <th className="px-4 py-3 font-medium text-right hidden md:table-cell">Coste</th>
+              <th className="px-4 py-3 font-medium text-right hidden md:table-cell">Margen</th>
               <th
-                className="px-4 py-3 font-medium text-right cursor-pointer select-none hover:text-gray-900"
+                className="px-4 py-3 font-medium text-right cursor-pointer select-none hover:text-gray-900 hidden sm:table-cell"
                 onClick={() => handleSort('stock')}
               >
-                En stock <SortArrow col="stock" />
+                Stock <SortArrow col="stock" />
               </th>
             </tr>
           </thead>
@@ -333,18 +334,19 @@ export default function ProductsPage() {
                       {p.name}
                     </Link>
                     {p.sku && <p className="text-xs text-gray-400 font-mono mt-0.5">{p.sku}</p>}
+                    <p className="text-xs text-gray-400 md:hidden">{p.category?.name ?? ''}</p>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">{p.category?.name ?? '—'}</td>
+                  <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{p.category?.name ?? '—'}</td>
                   <td className="px-4 py-3 text-right font-medium">{formatCurrency(Number(p.basePrice))}</td>
-                  <td className="px-4 py-3 text-right text-gray-500">{formatCurrency(Number(p.costPrice ?? 0))}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-right text-gray-500 hidden md:table-cell">{formatCurrency(Number(p.costPrice ?? 0))}</td>
+                  <td className="px-4 py-3 text-right hidden md:table-cell">
                     {m !== null ? (
                       <span className={m < 20 ? 'text-amber-600 font-medium' : m >= 50 ? 'text-green-600 font-medium' : 'text-gray-700'}>
                         {m.toFixed(0)}%
                       </span>
                     ) : '—'}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-right hidden sm:table-cell">
                     <StockBadge p={p} />
                   </td>
                 </tr>
@@ -352,6 +354,7 @@ export default function ProductsPage() {
             })}
           </tbody>
         </table>
+        </div>
 
         {/* Pagination */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-sm text-gray-500">
