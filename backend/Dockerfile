@@ -4,7 +4,7 @@ COPY backend/package*.json ./
 RUN npm install
 COPY backend/ .
 RUN npx prisma generate
-RUN npm run build
+RUN npm run build && ls -la /app/dist/
 
 FROM node:20-alpine AS runner
 WORKDIR /app
