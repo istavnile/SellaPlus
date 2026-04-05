@@ -60,7 +60,7 @@ export class UploadsController {
     // En producción esto debería cargarse desde una variable de entorno.
     // Por ahora, asumimos que el frontend sabe dónde está el backend.
     // Pero es mejor devolver la ruta relativa y que el frontend la resuelva.
-    const url = `/uploads/products/${file.filename}`;
+    const url = `/api/v1/uploads/products/${file.filename}`;
     return { url };
   }
 }

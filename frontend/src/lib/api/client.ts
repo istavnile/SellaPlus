@@ -42,6 +42,15 @@ export const uploadFile = async (file: File) => {
 export const getImageUrl = (url?: string | null) => {
   if (!url) return null;
   if (url.startsWith('data:') || url.startsWith('http')) return url;
-  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4300/api/v1').replace('/api/v1', '');
-  return `${baseUrl}${url}`;
+
+  // Si no estamos en el navegador, usamos la URL base del backend
+  if (typeof window === 'undefined') {
+    const baseUrl = (process.env.BACKEND_URL || 'http://localhost:4300/api/v1').replace('/api/v1', '');
+    return `${baseUrl}${url}`;
+  }
+
+  // En el navegador, usamos el proxy /api/backend
+  // Limpiamos /api/v1 si ya existe para evitar duplicación con el proxy
+  const cleanPath = url.replace(/^\/api\/v1/, '');
+  return `/api/backend${cleanPath.startsWith('/') ? '' : '/'}${cleanPath}`;
 };
