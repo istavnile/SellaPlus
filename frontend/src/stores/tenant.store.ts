@@ -20,6 +20,7 @@ interface TenantState {
   symbol: string;      // e.g. "S/"
   loaded: boolean;
   load: () => Promise<void>;
+  reset: () => void;
   format: (amount: number) => string;
 }
 
@@ -28,6 +29,8 @@ export const useTenantStore = create<TenantState>((set, get) => ({
   locale: 'es-PE',
   symbol: 'S/',
   loaded: false,
+
+  reset: () => set({ loaded: false }),
 
   load: async () => {
     if (get().loaded) return;

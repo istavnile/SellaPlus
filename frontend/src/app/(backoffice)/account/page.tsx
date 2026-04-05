@@ -6,6 +6,7 @@ import { Save, Trash2 } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 import toast from 'react-hot-toast';
 import { ConfirmModal } from '@/components/backoffice/confirm-modal';
+import { useTenantStore } from '@/stores/tenant.store';
 
 const CURRENCIES = [
   { value: 'PEN', label: 'Sol peruano (S/)' },
@@ -49,6 +50,7 @@ function decodeJwt(token: string): Record<string, any> | null {
 
 export default function AccountPage() {
   const router = useRouter();
+  const resetTenant = useTenantStore((s) => s.reset);
 
   const [settings, setSettings] = useState<TenantSettings>({
     name: '', currency: 'PEN', timezone: 'America/Lima', locale: 'es-PE',
@@ -81,6 +83,7 @@ export default function AccountPage() {
     setSaving(true);
     try {
       await apiClient.patch('/tenant/settings', settings);
+      resetTenant();
       toast.success('Configuración guardada');
     } catch {
       toast.error('Error al guardar');
