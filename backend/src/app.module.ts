@@ -13,10 +13,17 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { EmployeesModule } from './modules/employees/employees.module';
 import { MailingModule } from './common/mailing/mailing.module';
 import { PosDevicesModule } from './modules/pos-devices/pos-devices.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads',
+    }),
     PrismaModule,
     AuthModule,
     TenantsModule,
@@ -30,6 +37,7 @@ import { PosDevicesModule } from './modules/pos-devices/pos-devices.module';
     EmployeesModule,
     MailingModule,
     PosDevicesModule,
+    UploadsModule,
   ],
 })
 export class AppModule {}

@@ -7,7 +7,7 @@ import {
   Loader2, SlidersHorizontal, Monitor, LogOut, LayoutGrid, List, UserCircle, UserPlus, LayoutDashboard,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { apiClient } from '@/lib/api/client';
+import { apiClient, getImageUrl } from '@/lib/api/client';
 import { useTenantStore } from '@/stores/tenant.store';
 import { CheckoutModal } from '@/components/pos/checkout-modal';
 import { CustomerPickerModal, type SelectedCustomer } from '@/components/pos/customer-picker-modal';
@@ -405,7 +405,7 @@ export default function TouchPosPage() {
                     )}>
                     <div className="w-full aspect-square flex items-center justify-center rounded-xl overflow-hidden bg-gray-50 relative">
                       {p.images?.[0]?.url ? (
-                        <img src={p.images[0].url} alt={p.name} className="w-full h-full object-contain" />
+                        <img src={getImageUrl(p.images[0].url)!} alt={p.name} className="w-full h-full object-contain" />
                       ) : (
                         <PosShape shape={p.posShape ?? 'square'} color={p.posColor ?? '#e5e7eb'} size={44} />
                       )}
@@ -435,7 +435,7 @@ export default function TouchPosPage() {
                     )}>
                     <div className="w-11 h-11 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200">
                       {p.images?.[0]?.url ? (
-                        <img src={p.images[0].url} alt={p.name} className="w-full h-full object-cover" />
+                        <img src={getImageUrl(p.images[0].url)!} alt={p.name} className="w-full h-full object-cover" />
                       ) : (
                         <PosShape shape={p.posShape ?? 'square'} color={p.posColor ?? '#e5e7eb'} size={30} />
                       )}

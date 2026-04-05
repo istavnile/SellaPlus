@@ -8,7 +8,7 @@ import { z } from 'zod';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { Plus, X, Loader2, Trash2 } from 'lucide-react';
-import { apiClient } from '@/lib/api/client';
+import { apiClient, uploadFile, getImageUrl } from '@/lib/api/client';
 import { cn } from '@/lib/utils/cn';
 import { useCurrency } from '@/hooks/useCurrency';
 import { compressImage } from '@/lib/utils/compress-image';
@@ -139,10 +139,19 @@ export default function EditProductPage() {
   const onSubmit = async (data: ProductForm) => {
     setSaving(true);
     try {
+      let finalImageUrl = imagePreview;
+      if (imagePreview && imagePreview.startsWith('data:')) {
+        const res = await fetch(imagePreview);
+        const blob = await res.blob();
+        const file = new File([blob], 'product.jpg', { type: 'image/jpeg' });
+        const upRes = await uploadFile(file);
+        finalImageUrl = upRes.data.url;
+      }
+
       const payload = {
         ...data,
         categoryId: data.categoryId || null,
-        ...(imagePreview && imagePreview.startsWith('data:') ? { images: [{ url: imagePreview }] } : {}),
+        ...(finalImageUrl ? { images: [{ url: finalImageUrl }] } : {}),
         options: data.options
           ?.filter((o) => o.name && o.values)
           .map((o) => ({ name: o.name, values: o.values.split(',').map((v) => v.trim()).filter(Boolean) })),
@@ -374,7 +383,7 @@ export default function EditProductPage() {
                     }
                   }} />
                   {imagePreview ? (
-                    <img src={imagePreview} className="w-full h-full object-contain" alt="Vista previa" />
+                    <img src={getImageUrl(imagePreview)!} className="w-full h-full object-contain" alt="Vista previa" />
                   ) : (
                     <span className="text-sm font-medium text-gray-500">Subir imagen</span>
                   )}
@@ -394,7 +403,7 @@ export default function EditProductPage() {
               <div className="flex flex-col items-center gap-2">
                 <div className="w-24 h-24 rounded-xl border border-gray-200 flex items-center justify-center bg-white shadow-sm overflow-hidden p-1">
                   {imagePreview ? (
-                     <img src={imagePreview} className="w-full h-full object-contain" alt="Vista previa POS" />
+                     <img src={getImageUrl(imagePreview)!} className="w-full h-full object-contain" alt="Vista previa POS" />
                   ) : (
                      <span className="text-xs text-gray-400 text-center">Sin imagen</span>
                   )}

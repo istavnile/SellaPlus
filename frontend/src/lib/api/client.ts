@@ -30,3 +30,18 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+export const uploadFile = async (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return apiClient.post('/uploads/product', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
+export const getImageUrl = (url?: string | null) => {
+  if (!url) return null;
+  if (url.startsWith('data:') || url.startsWith('http')) return url;
+  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4300/api/v1').replace('/api/v1', '');
+  return `${baseUrl}${url}`;
+};
