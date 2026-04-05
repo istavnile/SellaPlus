@@ -7,20 +7,31 @@ async function proxy(req: NextRequest, params: { path: string[] }) {
   const search = req.nextUrl.search;
   const url = `${BACKEND_URL}/${path}${search}`;
 
+  const reqContentType = req.headers.get('content-type') || '';
+
   const headers = new Headers();
   const authHeader = req.headers.get('authorization');
   if (authHeader) headers.set('authorization', authHeader);
-  headers.set('content-type', req.headers.get('content-type') || 'application/json');
 
+  // For multipart uploads, forward the content-type including boundary
+  if (reqContentType) {
+    headers.set('content-type', reqContentType);
+  }
+
+  // Read body as raw binary to avoid corrupting multipart/binary data
   const isBodyMethod = !['GET', 'HEAD'].includes(req.method);
-  const body = isBodyMethod ? await req.text() : undefined;
+  const body = isBodyMethod ? await req.arrayBuffer() : undefined;
 
   const res = await fetch(url, { method: req.method, headers, body });
-  const text = await res.text();
 
-  return new NextResponse(text, {
+  // IMPORTANT: Use arrayBuffer for response to correctly handle binary data
+  // (images, files, etc). text() would corrupt non-UTF8 binary content.
+  const resContentType = res.headers.get('content-type') || 'application/json';
+  const buffer = await res.arrayBuffer();
+
+  return new NextResponse(buffer, {
     status: res.status,
-    headers: { 'content-type': res.headers.get('content-type') || 'application/json' },
+    headers: { 'content-type': resContentType },
   });
 }
 
