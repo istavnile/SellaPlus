@@ -41,10 +41,12 @@ export class ProductsService {
       stockAlert?: string;
       page?: number;
       limit?: number;
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
     },
   ) {
     const page  = params?.page  && params.page  > 0 ? params.page  : 1;
-    const limit = params?.limit && params.limit > 0 ? params.limit : 500;
+    const limit = params?.limit && params.limit > 0 ? params.limit : 25;
     const skip  = (page - 1) * limit;
 
     const where: any = {
@@ -60,40 +62,44 @@ export class ProductsService {
       }),
     };
 
+    if (params?.stockAlert === 'out_of_stock') {
+      where.variants = { none: { stockQty: { gt: 0 } } };
+    } else if (params?.stockAlert === 'low_stock') {
+      where.variants = { some: { stockQty: { lte: 5, gt: 0 } } };
+    }
+
+    const orderBy: any = {};
+    if (params?.sortBy === 'basePrice') {
+      orderBy.basePrice = params.sortOrder || 'asc';
+    } else if (params?.sortBy === 'name') {
+      orderBy.name = params.sortOrder || 'asc';
+    } else {
+      orderBy.name = 'asc';
+    }
+
     const [products, total] = await Promise.all([
       this.prisma.product.findMany({
         where,
-        include: {
-          category: true,
-          images: { orderBy: { sortOrder: 'asc' } },
-          variants: {
-            include: {
-              optionValues: {
-                include: { optionValue: { include: { option: true } } },
-              },
-            },
-          },
+        select: {
+          id: true,
+          name: true,
+          sku: true,
+          barcode: true,
+          basePrice: true,
+          costPrice: true,
+          isActive: true,
+          stockAlertThreshold: true,
+          category: { select: { id: true, name: true } },
+          variants: { select: { stockQty: true } },
         },
-        orderBy: { name: 'asc' },
+        orderBy,
         skip,
         take: limit,
       }),
       this.prisma.product.count({ where }),
     ]);
 
-    // Post-filter stock alert in memory (requires aggregate of variants)
-    let data = products;
-    if (params?.stockAlert === 'out_of_stock') {
-      data = products.filter((p) => p.variants.reduce((s, v) => s + v.stockQty, 0) === 0);
-    } else if (params?.stockAlert === 'low_stock') {
-      const threshold = 5;
-      data = products.filter((p) => {
-        const stock = p.variants.reduce((s, v) => s + v.stockQty, 0);
-        return stock > 0 && stock <= threshold;
-      });
-    }
-
-    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    return { data: products, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findOne(tenantId: string, id: string) {

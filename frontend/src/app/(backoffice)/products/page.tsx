@@ -42,9 +42,11 @@ export default function ProductsPage() {
   const [deleting, setDeleting]           = useState(false);
   const [showConfirm, setShowConfirm]     = useState(false);
   const [page, setPage]                   = useState(1);
-  const [rowsPerPage, setRowsPerPage]     = useState(10);
+  const [rowsPerPage, setRowsPerPage]     = useState(25);
   const [sortCol, setSortCol]             = useState<'name' | 'basePrice' | 'stock'>('name');
   const [sortDir, setSortDir]             = useState<'asc' | 'desc'>('asc');
+  const [total, setTotal]                 = useState(0);
+  const [totalPages, setTotalPages]       = useState(1);
 
   // ── loaders ────────────────────────────────────────────────────────────────
 
@@ -55,20 +57,27 @@ export default function ProductsPage() {
   const load = useCallback(() => {
     setLoading(true);
     setSelected(new Set());
-    setPage(1);
 
-    const params: Record<string, string> = { limit: '500' };
+    const params: any = {
+      page,
+      limit: rowsPerPage,
+      sortBy: sortCol,
+      sortOrder: sortDir,
+    };
     if (categoryId) params.categoryId = categoryId;
+    if (search.trim()) params.search = search;
+    if (stockFilter !== 'all') params.stockAlert = stockFilter;
 
     apiClient.get('/products', { params })
       .then((r) => {
-        // Backend now returns { data, total, ... }
-        const raw = r.data;
-        setProducts(Array.isArray(raw) ? raw : (raw.data ?? []));
+        const { data: items, total: t, totalPages: tp } = r.data;
+        setProducts(items ?? []);
+        setTotal(t ?? 0);
+        setTotalPages(tp ?? 1);
       })
       .catch(() => toast.error('Error al cargar productos'))
       .finally(() => setLoading(false));
-  }, [categoryId]);
+  }, [categoryId, page, rowsPerPage, search, stockFilter, sortCol, sortDir]);
 
   useEffect(() => { loadCategories(); }, [loadCategories]);
   useEffect(() => { load(); }, [load]);
@@ -82,45 +91,10 @@ export default function ProductsPage() {
     return ((p.basePrice - (p.costPrice ?? 0)) / p.basePrice) * 100;
   };
 
-  // ── client-side filter + sort ───────────────────────────────────────────────
+  // We no longer need client-side filter+sort+paginate because the server does it.
+  const paginated = products;
 
-  const filtered = useMemo(() => {
-    let list = products;
-
-    // search
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(
-        (p) => p.name.toLowerCase().includes(q) || (p.sku ?? '').toLowerCase().includes(q),
-      );
-    }
-
-    // stock filter
-    if (stockFilter === 'out_of_stock') {
-      list = list.filter((p) => totalStock(p) === 0);
-    } else if (stockFilter === 'low_stock') {
-      const threshold = 5;
-      list = list.filter((p) => { const s = totalStock(p); return s > 0 && s <= threshold; });
-    }
-
-    // sort
-    list = [...list].sort((a, b) => {
-      let diff = 0;
-      if (sortCol === 'name')      diff = a.name.localeCompare(b.name);
-      if (sortCol === 'basePrice') diff = Number(a.basePrice) - Number(b.basePrice);
-      if (sortCol === 'stock')     diff = totalStock(a) - totalStock(b);
-      return sortDir === 'asc' ? diff : -diff;
-    });
-
-    return list;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [products, search, stockFilter, sortCol, sortDir]);
-
-  // ── pagination ─────────────────────────────────────────────────────────────
-
-  const totalPages  = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
   const safePage    = Math.min(page, totalPages);
-  const paginated   = filtered.slice((safePage - 1) * rowsPerPage, safePage * rowsPerPage);
 
   // ── selection ──────────────────────────────────────────────────────────────
 
@@ -262,7 +236,7 @@ export default function ProductsPage() {
             </div>
 
             <span className="text-xs text-gray-400 whitespace-nowrap">
-              {filtered.length} artículo{filtered.length !== 1 ? 's' : ''}
+              {total} artículo{total !== 1 ? 's' : ''}
             </span>
           </div>
         </div>
