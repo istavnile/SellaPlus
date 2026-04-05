@@ -267,90 +267,92 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
+        {/* Mobile card list */}
+        <div className="sm:hidden divide-y divide-gray-100">
+          {loading ? (
+            <div className="py-12 text-center text-gray-400"><Loader2 size={20} className="animate-spin inline-block" /></div>
+          ) : paginated.length === 0 ? (
+            <div className="py-12 text-center text-gray-400 text-sm">
+              {search || categoryId || stockFilter !== 'all' ? 'Sin resultados.' : 'No hay artículos todavía.'}
+            </div>
+          ) : paginated.map((p) => {
+            const m = margin(p);
+            return (
+              <div key={p.id} className={`flex items-center gap-3 px-4 py-3 ${selected.has(p.id) ? 'bg-brand-50' : ''}`}>
+                <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleOne(p.id)}
+                  className="w-4 h-4 rounded border-gray-300 text-brand-600 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <Link href={`/products/${p.id}`} className="font-medium text-gray-800 text-sm leading-snug block truncate">
+                    {p.name}
+                  </Link>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    {p.category && <span className="text-xs text-gray-400">{p.category.name}</span>}
+                    {p.sku && <span className="text-xs text-gray-300 font-mono">{p.sku}</span>}
+                  </div>
+                  {m !== null && (
+                    <span className={`text-xs ${m < 20 ? 'text-amber-500' : m >= 50 ? 'text-green-600' : 'text-gray-400'}`}>
+                      Margen {m.toFixed(0)}%
+                    </span>
+                  )}
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="font-semibold text-sm text-gray-900">{formatCurrency(Number(p.basePrice))}</div>
+                  <div className="mt-1"><StockBadge p={p} /></div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-gray-500 border-b border-gray-100">
               <th className="px-4 py-3 w-10">
-                <input
-                  type="checkbox"
-                  checked={allPageSelected}
-                  onChange={toggleAll}
-                  className="w-4 h-4 rounded border-gray-300 text-brand-600 cursor-pointer focus:ring-brand-500"
-                />
+                <input type="checkbox" checked={allPageSelected} onChange={toggleAll}
+                  className="w-4 h-4 rounded border-gray-300 text-brand-600 cursor-pointer focus:ring-brand-500" />
               </th>
-              <th
-                className="px-4 py-3 font-medium cursor-pointer select-none hover:text-gray-900"
-                onClick={() => handleSort('name')}
-              >
+              <th className="px-4 py-3 font-medium cursor-pointer select-none hover:text-gray-900" onClick={() => handleSort('name')}>
                 Nombre del artículo <SortArrow col="name" />
               </th>
-              <th className="px-4 py-3 font-medium hidden md:table-cell">Categoría</th>
-              <th
-                className="px-4 py-3 font-medium text-right cursor-pointer select-none hover:text-gray-900"
-                onClick={() => handleSort('basePrice')}
-              >
+              <th className="px-4 py-3 font-medium">Categoría</th>
+              <th className="px-4 py-3 font-medium text-right cursor-pointer select-none hover:text-gray-900" onClick={() => handleSort('basePrice')}>
                 Precio <SortArrow col="basePrice" />
               </th>
               <th className="px-4 py-3 font-medium text-right hidden md:table-cell">Coste</th>
               <th className="px-4 py-3 font-medium text-right hidden md:table-cell">Margen</th>
-              <th
-                className="px-4 py-3 font-medium text-right cursor-pointer select-none hover:text-gray-900 hidden sm:table-cell"
-                onClick={() => handleSort('stock')}
-              >
+              <th className="px-4 py-3 font-medium text-right cursor-pointer select-none hover:text-gray-900" onClick={() => handleSort('stock')}>
                 Stock <SortArrow col="stock" />
               </th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <td colSpan={7} className="text-center text-gray-400 py-12">
-                  <Loader2 size={20} className="animate-spin inline-block" />
-                </td>
-              </tr>
+              <tr><td colSpan={7} className="text-center text-gray-400 py-12"><Loader2 size={20} className="animate-spin inline-block" /></td></tr>
             ) : paginated.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="text-center text-gray-400 py-12">
-                  {search || categoryId || stockFilter !== 'all' ? 'Sin resultados con los filtros actuales.' : 'No hay artículos todavía.'}
-                </td>
-              </tr>
+              <tr><td colSpan={7} className="text-center text-gray-400 py-12">
+                {search || categoryId || stockFilter !== 'all' ? 'Sin resultados.' : 'No hay artículos todavía.'}
+              </td></tr>
             ) : paginated.map((p) => {
               const m = margin(p);
               return (
-                <tr
-                  key={p.id}
-                  className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${selected.has(p.id) ? 'bg-brand-50' : ''}`}
-                >
+                <tr key={p.id} className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${selected.has(p.id) ? 'bg-brand-50' : ''}`}>
                   <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={selected.has(p.id)}
-                      onChange={() => toggleOne(p.id)}
-                      className="w-4 h-4 rounded border-gray-300 text-brand-600 cursor-pointer focus:ring-brand-500"
-                    />
+                    <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleOne(p.id)}
+                      className="w-4 h-4 rounded border-gray-300 text-brand-600 cursor-pointer focus:ring-brand-500" />
                   </td>
                   <td className="px-4 py-3">
-                    <Link href={`/products/${p.id}`} className="font-medium text-gray-800 hover:text-brand-600">
-                      {p.name}
-                    </Link>
+                    <Link href={`/products/${p.id}`} className="font-medium text-gray-800 hover:text-brand-600">{p.name}</Link>
                     {p.sku && <p className="text-xs text-gray-400 font-mono mt-0.5">{p.sku}</p>}
-                    <p className="text-xs text-gray-400 md:hidden">{p.category?.name ?? ''}</p>
                   </td>
-                  <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{p.category?.name ?? '—'}</td>
+                  <td className="px-4 py-3 text-gray-500">{p.category?.name ?? '—'}</td>
                   <td className="px-4 py-3 text-right font-medium">{formatCurrency(Number(p.basePrice))}</td>
                   <td className="px-4 py-3 text-right text-gray-500 hidden md:table-cell">{formatCurrency(Number(p.costPrice ?? 0))}</td>
                   <td className="px-4 py-3 text-right hidden md:table-cell">
-                    {m !== null ? (
-                      <span className={m < 20 ? 'text-amber-600 font-medium' : m >= 50 ? 'text-green-600 font-medium' : 'text-gray-700'}>
-                        {m.toFixed(0)}%
-                      </span>
-                    ) : '—'}
+                    {m !== null ? <span className={m < 20 ? 'text-amber-600 font-medium' : m >= 50 ? 'text-green-600 font-medium' : 'text-gray-700'}>{m.toFixed(0)}%</span> : '—'}
                   </td>
-                  <td className="px-4 py-3 text-right hidden sm:table-cell">
-                    <StockBadge p={p} />
-                  </td>
+                  <td className="px-4 py-3 text-right"><StockBadge p={p} /></td>
                 </tr>
               );
             })}

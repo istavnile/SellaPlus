@@ -100,7 +100,7 @@ export default function PorCategoriaPage() {
                   <p className="text-gray-400 text-sm">No hay ventas en el período de tiempo seleccionado</p>
                 </div>
              ) : (
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto"><table className="w-full text-sm min-w-[500px]">
                   <thead>
                     <tr className="text-left text-xs font-bold text-gray-500 border-b border-gray-200 bg-[#fbfbfb]">
                       <th className="px-5 py-4 font-bold border-r border-gray-100">Categoría</th>

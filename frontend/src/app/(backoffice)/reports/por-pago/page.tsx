@@ -104,7 +104,7 @@ export default function PorPagoPage() {
                   <p className="text-gray-400 text-sm">No hay ventas filtradas por tipo de pago en este período</p>
                 </div>
              ) : (
-                <table className="w-full text-xs">
+                <div className="overflow-x-auto"><table className="w-full text-xs min-w-[600px]">
                   <thead>
                     <tr className="text-left text-[10px] font-bold text-gray-500 border-b border-gray-200 bg-[#fbfbfb] uppercase tracking-wider">
                       <th className="px-5 py-4 border-r border-gray-100 min-w-[140px]">Tipo de pago</th>

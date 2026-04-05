@@ -744,21 +744,26 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col md:flex-row gap-6 h-full -m-6 p-4 md:p-6">
 
-      {/* ── Mobile: select dropdown ─────────────────────────────── */}
-      <div className="md:hidden">
-        <select
-          value={active}
-          onChange={(e) => setActive(e.target.value as Section)}
-          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500/30 appearance-none"
-        >
+      {/* ── Mobile: scrollable tabs ──────────────────────────────── */}
+      <div className="md:hidden -mx-4 px-4 overflow-x-auto">
+        <div className="flex gap-2 pb-1 min-w-max">
           {NAV.map(({ group, items }) => (
-            <optgroup key={group} label={group}>
-              {items.map(({ id, label }) => (
-                <option key={id} value={id}>{label}</option>
-              ))}
-            </optgroup>
+            items.map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => setActive(id as Section)}
+                className={cn(
+                  'px-3 py-2 rounded-lg text-sm whitespace-nowrap font-medium transition-colors border',
+                  active === id
+                    ? 'bg-brand-600 text-white border-brand-600'
+                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50',
+                )}
+              >
+                {label}
+              </button>
+            ))
           ))}
-        </select>
+        </div>
       </div>
 
       {/* ── Desktop: sidebar ────────────────────────────────────── */}

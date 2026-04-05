@@ -114,22 +114,42 @@ export default function CustomersPage() {
           )}
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
+        {/* Mobile card list */}
+        <div className="sm:hidden divide-y divide-gray-100">
+          {loading ? (
+            <div className="py-10 text-center text-gray-400 text-sm">Cargando...</div>
+          ) : filtered.length === 0 ? (
+            <div className="py-10 text-center text-gray-400 text-sm">{search ? 'Sin resultados.' : 'No hay clientes todavía.'}</div>
+          ) : filtered.map((c) => (
+            <div key={c.id} className={`flex items-center gap-3 px-4 py-3 ${selected.has(c.id) ? 'bg-red-50/40' : ''}`}>
+              <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)}
+                className="rounded border-gray-300 text-brand-600 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <Link href={`/customers/${c.id}`} className="font-medium text-gray-800 text-sm block truncate">
+                  {c.name}
+                </Link>
+                <div className="flex flex-col gap-0.5 mt-0.5">
+                  {c.phone && <span className="text-xs text-gray-400">{c.phone}</span>}
+                  {c.email && <span className="text-xs text-gray-400 truncate">{c.email}</span>}
+                </div>
+              </div>
+              {c.customerCode && <span className="text-xs text-gray-300 font-mono shrink-0">#{c.customerCode}</span>}
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-gray-500 border-b border-gray-100">
               <th className="px-4 py-3 w-10">
-                <input
-                  type="checkbox"
-                  checked={allChecked}
-                  onChange={toggleAll}
-                  className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-                />
+                <input type="checkbox" checked={allChecked} onChange={toggleAll}
+                  className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
               </th>
               <th className="px-4 py-3 font-medium">Nombre</th>
-              <th className="px-4 py-3 font-medium hidden sm:table-cell">Email</th>
-              <th className="px-4 py-3 font-medium hidden sm:table-cell">Teléfono</th>
+              <th className="px-4 py-3 font-medium">Email</th>
+              <th className="px-4 py-3 font-medium">Teléfono</th>
               <th className="px-4 py-3 font-medium hidden md:table-cell">Ciudad</th>
               <th className="px-4 py-3 font-medium hidden md:table-cell">Código</th>
             </tr>
@@ -142,26 +162,16 @@ export default function CustomersPage() {
                 {search ? 'Sin resultados.' : 'No hay clientes todavía.'}
               </td></tr>
             ) : filtered.map((c) => (
-              <tr
-                key={c.id}
-                className={`border-b border-gray-50 transition-colors ${selected.has(c.id) ? 'bg-red-50/40' : 'hover:bg-gray-50'}`}
-              >
+              <tr key={c.id} className={`border-b border-gray-50 transition-colors ${selected.has(c.id) ? 'bg-red-50/40' : 'hover:bg-gray-50'}`}>
                 <td className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={selected.has(c.id)}
-                    onChange={() => toggle(c.id)}
-                    className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-                  />
+                  <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)}
+                    className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
                 </td>
                 <td className="px-4 py-3">
-                  <Link href={`/customers/${c.id}`} className="font-medium text-gray-800 hover:text-brand-600">
-                    {c.name}
-                  </Link>
-                  <p className="text-xs text-gray-400 sm:hidden">{c.phone ?? c.email ?? ''}</p>
+                  <Link href={`/customers/${c.id}`} className="font-medium text-gray-800 hover:text-brand-600">{c.name}</Link>
                 </td>
-                <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">{c.email ?? '—'}</td>
-                <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">{c.phone ?? '—'}</td>
+                <td className="px-4 py-3 text-gray-500">{c.email ?? '—'}</td>
+                <td className="px-4 py-3 text-gray-500">{c.phone ?? '—'}</td>
                 <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{c.city ?? '—'}</td>
                 <td className="px-4 py-3 text-gray-400 font-mono text-xs hidden md:table-cell">{c.customerCode ?? '—'}</td>
               </tr>
