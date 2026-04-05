@@ -23,6 +23,9 @@ import { join } from 'path';
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/api/v1/uploads',
+      serveStaticOptions: {
+        index: false,
+      },
     }),
     PrismaModule,
     AuthModule,
