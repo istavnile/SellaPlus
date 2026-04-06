@@ -403,7 +403,7 @@ export default function RecibosPage() {
               <thead>
                 <tr className="text-left text-[11px] font-bold text-gray-500 border-b border-gray-100 bg-[#fbfbfb] uppercase tracking-widest">
                   {COLUMN_OPTIONS.filter(c => visibleColumns.includes(c.id)).map(col => (
-                    <th key={col.id} className={`px-5 py-4 ${col.id === 'total' ? 'text-right' : ''}`}>
+                    <th key={col.id} className={`px-5 py-4 whitespace-nowrap ${col.id === 'total' ? 'text-right' : ''}`}>
                       {col.label}
                     </th>
                   ))}
@@ -422,12 +422,12 @@ export default function RecibosPage() {
                     onClick={() => setSelectedId(r.id)}
                     className="hover:bg-brand-50 transition-colors cursor-pointer text-gray-800"
                   >
-                    {visibleColumns.includes('transactionNumber') && <td className="px-5 py-4 font-semibold text-brand-600 hover:underline text-[12px] uppercase">{r.transactionNumber}</td>}
-                    {visibleColumns.includes('createdAt') && <td className="px-5 py-4 font-medium">{new Date(r.createdAt).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>}
-                    {visibleColumns.includes('cashier') && <td className="px-5 py-4 font-medium">{r.cashier?.name ?? '—'}</td>}
-                    {visibleColumns.includes('customer') && <td className="px-5 py-4 font-medium">{r.customer?.name ?? '—'}</td>}
-                    {visibleColumns.includes('method') && <td className="px-5 py-4 text-gray-600 font-medium">{r.payments?.map((p) => p.gatewayName || (METHOD_LABELS[p.method] ?? p.method)).join(', ') || '—'}</td>}
-                    {visibleColumns.includes('total') && <td className="px-5 py-4 text-right font-bold text-gray-900">{money(Number(r.total))}</td>}
+                    {visibleColumns.includes('transactionNumber') && <td className="px-5 py-4 font-semibold text-brand-600 hover:underline text-[12px] uppercase whitespace-nowrap">{r.transactionNumber}</td>}
+                    {visibleColumns.includes('createdAt') && <td className="px-5 py-4 font-medium whitespace-nowrap">{new Date(r.createdAt).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>}
+                    {visibleColumns.includes('cashier') && <td className="px-5 py-4 font-medium whitespace-nowrap">{r.cashier?.name ?? '—'}</td>}
+                    {visibleColumns.includes('customer') && <td className="px-5 py-4 font-medium whitespace-nowrap">{r.customer?.name ?? '—'}</td>}
+                    {visibleColumns.includes('method') && <td className="px-5 py-4 text-gray-600 font-medium whitespace-nowrap">{r.payments?.map((p) => p.gatewayName || (METHOD_LABELS[p.method] ?? p.method)).join(', ') || '—'}</td>}
+                    {visibleColumns.includes('total') && <td className="px-5 py-4 text-right font-bold text-gray-900 whitespace-nowrap">{money(Number(r.total))}</td>}
                   </tr>
                 )) : null}
               </tbody>

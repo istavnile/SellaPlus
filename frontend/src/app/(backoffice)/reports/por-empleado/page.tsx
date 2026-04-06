@@ -168,7 +168,7 @@ export default function PorEmpleadoPage() {
                         if (!col) return null;
                         const isCenter = colId !== 'name';
                         return (
-                          <th key={colId} className={`px-5 py-4 tracking-tight ${isCenter ? 'text-center' : ''}`}>
+                          <th key={colId} className={`px-5 py-4 tracking-tight whitespace-nowrap ${isCenter ? 'text-center' : ''}`}>
                             {col.label}
                           </th>
                         );
@@ -179,19 +179,19 @@ export default function PorEmpleadoPage() {
                     {data.map((r) => (
                       <tr key={r.employeeId} className="hover:bg-gray-50 transition-colors text-gray-800">
                         {visibleColumns.includes('name') && (
-                          <td className="px-5 py-4 font-semibold text-brand-600 cursor-pointer hover:underline">
+                          <td className="px-5 py-4 font-semibold text-brand-600 cursor-pointer hover:underline whitespace-nowrap">
                             <Link href={`/employees/${r.employeeId}`}>
                               {r.name}
                             </Link>
                           </td>
                         )}
-                        {visibleColumns.includes('grossSales') && <td className="px-5 py-4 text-center">{money(r.grossSales)}</td>}
-                        {visibleColumns.includes('refunds') && <td className="px-5 py-4 text-center text-red-500">{money(r.refunds)}</td>}
-                        {visibleColumns.includes('discounts') && <td className="px-5 py-4 text-center text-gray-600">{money(r.discounts)}</td>}
-                        {visibleColumns.includes('netSales') && <td className="px-5 py-4 text-center font-bold text-gray-900">{money(r.netSales)}</td>}
-                        {visibleColumns.includes('receipts') && <td className="px-5 py-4 text-center text-gray-500 font-medium">{r.receipts}</td>}
-                        {visibleColumns.includes('avgSale') && <td className="px-5 py-4 text-center font-medium">{money(r.avgSale)}</td>}
-                        {visibleColumns.includes('customers') && <td className="px-5 py-4 text-center text-gray-400">—</td>}
+                        {visibleColumns.includes('grossSales') && <td className="px-5 py-4 text-center whitespace-nowrap">{money(r.grossSales)}</td>}
+                        {visibleColumns.includes('refunds') && <td className="px-5 py-4 text-center text-red-500 whitespace-nowrap">{money(r.refunds)}</td>}
+                        {visibleColumns.includes('discounts') && <td className="px-5 py-4 text-center text-gray-600 whitespace-nowrap">{money(r.discounts)}</td>}
+                        {visibleColumns.includes('netSales') && <td className="px-5 py-4 text-center font-bold text-gray-900 whitespace-nowrap">{money(r.netSales)}</td>}
+                        {visibleColumns.includes('receipts') && <td className="px-5 py-4 text-center text-gray-500 font-medium whitespace-nowrap">{r.receipts}</td>}
+                        {visibleColumns.includes('avgSale') && <td className="px-5 py-4 text-center font-medium whitespace-nowrap">{money(r.avgSale)}</td>}
+                        {visibleColumns.includes('customers') && <td className="px-5 py-4 text-center text-gray-400 whitespace-nowrap">—</td>}
                       </tr>
                     ))}
                   </tbody>

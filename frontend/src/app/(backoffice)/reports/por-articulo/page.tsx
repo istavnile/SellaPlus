@@ -275,7 +275,7 @@ export default function PorArticuloPage() {
                       const col = COLUMN_OPTIONS.find(c => c.id === colId);
                       if (!col) return null;
                       
-                      let thClass = "px-5 py-4 font-bold ";
+                      let thClass = "px-5 py-4 font-bold whitespace-nowrap ";
                       if (colId === 'productName') thClass += "border-r border-gray-100";
                       else if (colId === 'totalRevenue') thClass += "text-right";
                       
@@ -290,9 +290,9 @@ export default function PorArticuloPage() {
                 <tbody>
                   {data.map((r) => (
                     <tr key={r.productId} className="border-b border-gray-100 hover:bg-gray-50">
-                      {visibleColumns.includes('productName') && <td className="px-5 py-4 text-gray-800 font-medium">{r.productName}</td>}
-                      {visibleColumns.includes('totalQuantity') && <td className="px-5 py-4 text-gray-600 font-medium">{Number(r.totalQuantity ?? 0).toFixed(0)}</td>}
-                      {visibleColumns.includes('totalRevenue') && <td className="px-5 py-4 text-right font-medium text-gray-900">{money(Number(r.totalRevenue ?? 0))}</td>}
+                      {visibleColumns.includes('productName') && <td className="px-5 py-4 text-gray-800 font-medium whitespace-nowrap">{r.productName}</td>}
+                      {visibleColumns.includes('totalQuantity') && <td className="px-5 py-4 text-gray-600 font-medium whitespace-nowrap">{Number(r.totalQuantity ?? 0).toFixed(0)}</td>}
+                      {visibleColumns.includes('totalRevenue') && <td className="px-5 py-4 text-right font-medium text-gray-900 whitespace-nowrap">{money(Number(r.totalRevenue ?? 0))}</td>}
                     </tr>
                   ))}
                 </tbody>

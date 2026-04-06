@@ -162,7 +162,7 @@ export default function PorPagoPage() {
                         const col = COLUMN_OPTIONS.find(c => c.id === colId);
                         if (!col) return null;
                         
-                        let thClass = "px-5 py-4 ";
+                        let thClass = "px-5 py-4 whitespace-nowrap ";
                         if (colId === 'method') thClass += "border-r border-gray-100 min-w-[140px]";
                         else if (colId === 'refundTransactions' || colId === 'refundAmount') thClass += "text-center text-red-500";
                         else thClass += "text-center";
@@ -180,12 +180,12 @@ export default function PorPagoPage() {
                   <tbody>
                     {data.map((r) => (
                       <tr key={r.method} className="border-b border-gray-100 hover:bg-gray-50 text-gray-800">
-                        {visibleColumns.includes('method') && <td className="px-5 py-4 font-medium border-r border-gray-50">{METHOD_LABELS[r.method] ?? r.method}</td>}
-                        {visibleColumns.includes('transactions') && <td className="px-5 py-4 text-center text-gray-500 font-medium">{r.transactions}</td>}
-                        {visibleColumns.includes('amount') && <td className="px-5 py-4 text-center">{money(r.amount)}</td>}
-                        {visibleColumns.includes('refundTransactions') && <td className="px-5 py-4 text-center text-red-500 font-medium">{r.refundTransactions}</td>}
-                        {visibleColumns.includes('refundAmount') && <td className="px-5 py-4 text-center text-red-500">{money(r.refundAmount)}</td>}
-                        {visibleColumns.includes('netAmount') && <td className="px-5 py-4 text-center font-bold text-green-700">{money(r.netAmount)}</td>}
+                        {visibleColumns.includes('method') && <td className="px-5 py-4 font-medium border-r border-gray-50 whitespace-nowrap">{METHOD_LABELS[r.method] ?? r.method}</td>}
+                        {visibleColumns.includes('transactions') && <td className="px-5 py-4 text-center text-gray-500 font-medium whitespace-nowrap">{r.transactions}</td>}
+                        {visibleColumns.includes('amount') && <td className="px-5 py-4 text-center whitespace-nowrap">{money(r.amount)}</td>}
+                        {visibleColumns.includes('refundTransactions') && <td className="px-5 py-4 text-center text-red-500 font-medium whitespace-nowrap">{r.refundTransactions}</td>}
+                        {visibleColumns.includes('refundAmount') && <td className="px-5 py-4 text-center text-red-500 whitespace-nowrap">{money(r.refundAmount)}</td>}
+                        {visibleColumns.includes('netAmount') && <td className="px-5 py-4 text-center font-bold text-green-700 whitespace-nowrap">{money(r.netAmount)}</td>}
                       </tr>
                     ))}
                   </tbody>

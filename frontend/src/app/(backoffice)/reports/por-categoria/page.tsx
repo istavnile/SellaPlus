@@ -156,7 +156,7 @@ export default function PorCategoriaPage() {
                         const col = COLUMN_OPTIONS.find(c => c.id === colId);
                         if (!col) return null;
                         
-                        let thClass = "px-5 py-4 font-bold ";
+                        let thClass = "px-5 py-4 font-bold whitespace-nowrap ";
                         if (colId === 'name') thClass += "border-r border-gray-100";
                         else thClass += "text-center";
                         
@@ -171,11 +171,11 @@ export default function PorCategoriaPage() {
                   <tbody>
                     {data.map((r) => (
                       <tr key={r.categoryId} className="border-b border-gray-100 hover:bg-gray-50 text-gray-800">
-                        {visibleColumns.includes('name') && <td className="px-5 py-4 font-medium border-r border-gray-50">{r.name}</td>}
-                        {visibleColumns.includes('itemsSold') && <td className="px-5 py-4 text-center font-medium">{Number(r.itemsSold).toFixed(0)}</td>}
-                        {visibleColumns.includes('netSales') && <td className="px-5 py-4 text-center font-medium">{money(r.netSales)}</td>}
-                        {visibleColumns.includes('cogs') && <td className="px-5 py-4 text-center text-gray-500">{money(r.cogs)}</td>}
-                        {visibleColumns.includes('grossProfit') && <td className="px-5 py-4 text-center font-medium">{money(r.grossProfit)}</td>}
+                        {visibleColumns.includes('name') && <td className="px-5 py-4 font-medium border-r border-gray-50 whitespace-nowrap">{r.name}</td>}
+                        {visibleColumns.includes('itemsSold') && <td className="px-5 py-4 text-center font-medium whitespace-nowrap">{Number(r.itemsSold).toFixed(0)}</td>}
+                        {visibleColumns.includes('netSales') && <td className="px-5 py-4 text-center font-medium whitespace-nowrap">{money(r.netSales)}</td>}
+                        {visibleColumns.includes('cogs') && <td className="px-5 py-4 text-center text-gray-500 whitespace-nowrap">{money(r.cogs)}</td>}
+                        {visibleColumns.includes('grossProfit') && <td className="px-5 py-4 text-center font-medium whitespace-nowrap">{money(r.grossProfit)}</td>}
                       </tr>
                     ))}
                   </tbody>
