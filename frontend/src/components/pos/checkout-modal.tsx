@@ -93,6 +93,7 @@ export function CheckoutModal({ isOpen, onClose, total, subtotal, cart, customer
         ...(customer ? { customerId: customer.id } : {}),
         payments: [{
           method: selectedPm.type,
+          methodName: selectedPm.name,
           amount: total,
           ...(isCash ? { cashTendered: tendered, changeGiven: Math.max(0, tendered - total) } : {}),
         }],

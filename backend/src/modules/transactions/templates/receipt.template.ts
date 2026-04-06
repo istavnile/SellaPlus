@@ -46,7 +46,7 @@ export function generateReceiptHtml(data: ReceiptData): string {
 
   const paymentRows = transaction.payments.map((p) => `
     <tr>
-      <td style="font-size:13px;color:#6b7280;padding:3px 0;">${fmtMethod(p.method)}</td>
+      <td style="font-size:13px;color:#6b7280;padding:3px 0;">${p.gatewayName || fmtMethod(p.method)}</td>
       <td style="font-size:13px;color:#6b7280;text-align:right;padding:3px 0;">${currency}${Number(p.amount).toFixed(2)}</td>
     </tr>
   `).join('');

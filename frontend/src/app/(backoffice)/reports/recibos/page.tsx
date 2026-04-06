@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
+import { Menu, Transition } from '@headlessui/react';
 import { apiClient } from '@/lib/api/client';
 import { DateRangePicker } from '@/components/reports/DateRangePicker';
 import { TimeRangePicker } from '@/components/reports/TimeRangePicker';
 import {
   ReceiptText, DollarSign, RotateCcw, Search, ChevronDown, ChevronLeft, ChevronRight,
-  Users, FileText, X, Mail, Loader2, Trash2
+  Users, FileText, X, Mail, Loader2, Trash2, Columns
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -15,7 +16,7 @@ interface Receipt {
   createdAt: string;
   cashier?: { name: string };
   customer?: { name: string; email?: string } | null;
-  payments?: { method: string; amount: number; cashTendered?: number; changeGiven?: number }[];
+  payments?: { method: string; gatewayName?: string; amount: number; cashTendered?: number; changeGiven?: number }[];
 }
 
 interface ReceiptDetail extends Receipt {
@@ -32,6 +33,15 @@ const METHOD_LABELS: Record<string, string> = {
 
 const defaultFrom = new Date(); defaultFrom.setDate(defaultFrom.getDate() - 29); defaultFrom.setHours(0,0,0,0);
 const defaultTo   = new Date(); defaultTo.setHours(23,59,59,999);
+
+const COLUMN_OPTIONS = [
+  { id: 'transactionNumber', label: 'Nº. de Recibo' },
+  { id: 'createdAt', label: 'Fecha' },
+  { id: 'cashier', label: 'Empleado' },
+  { id: 'customer', label: 'Cliente' },
+  { id: 'method', label: 'Tipo' },
+  { id: 'total', label: 'Total' }
+];
 
 // ─── Receipt Detail Modal ─────────────────────────────────────────────────────
 
@@ -179,7 +189,7 @@ function ReceiptDetailModal({ id, onClose, onDeleteSuccess }: { id: string; onCl
               {tx.payments?.map((p, i) => (
                 <div key={i} className="space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-700 font-medium">{METHOD_LABELS[p.method] ?? p.method}</span>
+                    <span className="text-gray-700 font-medium">{p.gatewayName || (METHOD_LABELS[p.method] ?? p.method)}</span>
                     <span className="font-semibold text-gray-900">{money(Number(p.amount))}</span>
                   </div>
                   {p.method === 'CASH' && p.cashTendered != null && (
@@ -243,6 +253,13 @@ export default function RecibosPage() {
   const [time, setTime]         = useState({ from: '12 AM', to: '11 PM', isCustom: false });
   const [summary, setSummary]   = useState<{ totalReceipts: number; totalSales: number; totalRefunds: number } | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(COLUMN_OPTIONS.map(c => c.id));
+
+  const toggleColumn = (id: string) => {
+    setVisibleColumns(prev => 
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    );
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -263,10 +280,22 @@ export default function RecibosPage() {
   useEffect(() => { load(); }, [load]);
 
   const exportCsv = () => {
-    const headers = 'Nº Recibo,Fecha,Empleado,Cliente,Tipo,Total\n';
-    const rows = data.map((r) =>
-      `${r.transactionNumber},${r.createdAt.slice(0, 10)},${r.cashier?.name ?? ''},${r.customer?.name ?? ''},${r.payments?.map((p) => METHOD_LABELS[p.method] ?? p.method).join('+') ?? ''},${Number(r.total).toFixed(2)}`,
-    ).join('\n');
+    const activeCols = COLUMN_OPTIONS.filter(c => visibleColumns.includes(c.id));
+    const headers = activeCols.map(c => c.label).join(',') + '\n';
+    
+    const rows = data.map((r) => {
+      const vals = activeCols.map(c => {
+        if (c.id === 'transactionNumber') return r.transactionNumber;
+        if (c.id === 'createdAt') return r.createdAt.slice(0, 10);
+        if (c.id === 'cashier') return r.cashier?.name ?? '';
+        if (c.id === 'customer') return r.customer?.name ?? '';
+        if (c.id === 'method') return r.payments?.map((p) => p.gatewayName || (METHOD_LABELS[p.method] ?? p.method)).join(' + ') ?? '';
+        if (c.id === 'total') return Number(r.total).toFixed(2);
+        return '';
+      });
+      return vals.join(',');
+    }).join('\n');
+    
     const blob = new Blob(['\uFEFF' + headers + rows], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a'); a.href = url;
@@ -329,32 +358,61 @@ export default function RecibosPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white border border-gray-100 shadow-sm rounded-xl flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between p-4 border-b border-gray-100">
-            <button onClick={exportCsv} className="flex items-center gap-2 text-xs font-bold text-gray-700 hover:text-brand-600 px-3 py-1.5 transition-colors">
-              Exportar <ChevronDown size={14} className="text-gray-400" />
+        <div className="bg-white border border-gray-100 shadow-sm rounded-xl flex flex-col overflow-visible">
+          <div className="flex items-center justify-between p-3 border-b border-gray-100">
+            <button onClick={exportCsv} className="flex items-center gap-2 text-xs font-bold text-brand-600 hover:text-brand-700 px-4 py-2 transition-colors uppercase tracking-wider border border-brand-100 rounded-lg">
+              EXPORTAR
             </button>
-            <button className="p-2 text-gray-400 hover:text-gray-600">
-              <Search size={20} />
-            </button>
+            <div className="flex items-center gap-2">
+              <Menu as="div" className="relative inline-block text-left">
+                <Menu.Button className="p-2 text-gray-400 hover:text-brand-600 transition-colors">
+                  <Columns size={20} />
+                </Menu.Button>
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-100"
+                  enterFrom="transform opacity-0 scale-95"
+                  enterTo="transform opacity-100 scale-100"
+                  leave="transition ease-in duration-75"
+                  leaveFrom="transform opacity-100 scale-100"
+                  leaveTo="transform opacity-0 scale-95"
+                >
+                  <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-xl ring-1 ring-black/5 focus:outline-none p-2 border border-gray-100 z-50">
+                    <div className="px-3 py-2 text-xs font-bold text-gray-500 uppercase border-b border-gray-50 mb-1 tracking-widest">
+                      Campo Mostrar
+                    </div>
+                    {COLUMN_OPTIONS.map((col) => (
+                      <div key={col.id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-brand-50 rounded-lg cursor-pointer transition-colors" onClick={() => toggleColumn(col.id)}>
+                        <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${visibleColumns.includes(col.id) ? 'bg-brand-600 border-brand-600' : 'border-gray-300'}`}>
+                          {visibleColumns.includes(col.id) && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><path d="M20 6L9 17l-5-5"/></svg>}
+                        </div>
+                        <span className="text-sm text-gray-700 font-medium">{col.label}</span>
+                      </div>
+                    ))}
+                  </Menu.Items>
+                </Transition>
+              </Menu>
+              <button className="p-2 text-gray-400 hover:text-gray-600">
+                <Search size={20} />
+              </button>
+            </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto min-h-[300px]">
             <table className="w-full text-sm min-w-[600px]">
               <thead>
-                <tr className="text-left text-xs font-bold text-gray-500 border-b border-gray-200 bg-[#fbfbfb]">
-                  <th className="px-5 py-4">Nº. de Recibo</th>
-                  <th className="px-5 py-4">Fecha</th>
-                  <th className="px-5 py-4">Empleado</th>
-                  <th className="px-5 py-4">Cliente</th>
-                  <th className="px-5 py-4">Tipo</th>
-                  <th className="px-5 py-4 text-right">Total</th>
+                <tr className="text-left text-[11px] font-bold text-gray-500 border-b border-gray-100 bg-[#fbfbfb] uppercase tracking-widest">
+                  {COLUMN_OPTIONS.filter(c => visibleColumns.includes(c.id)).map(col => (
+                    <th key={col.id} className={`px-5 py-4 ${col.id === 'total' ? 'text-right' : ''}`}>
+                      {col.label}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="py-20 text-center text-gray-400 text-sm">
+                    <td colSpan={visibleColumns.length} className="py-20 text-center text-gray-400 text-sm">
                       <Loader2 size={20} className="animate-spin mx-auto mb-2" /> Cargando...
                     </td>
                   </tr>
@@ -362,18 +420,14 @@ export default function RecibosPage() {
                   <tr
                     key={r.id}
                     onClick={() => setSelectedId(r.id)}
-                    className="hover:bg-brand-50 transition-colors cursor-pointer"
+                    className="hover:bg-brand-50 transition-colors cursor-pointer text-gray-800"
                   >
-                    <td className="px-5 py-4 font-semibold text-brand-600 hover:underline">{r.transactionNumber}</td>
-                    <td className="px-5 py-4 text-gray-700">
-                      {new Date(r.createdAt).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td className="px-5 py-4 text-gray-700">{r.cashier?.name ?? '—'}</td>
-                    <td className="px-5 py-4 text-gray-700">{r.customer?.name ?? '—'}</td>
-                    <td className="px-5 py-4 text-gray-700 font-medium">
-                      {r.payments?.map((p) => METHOD_LABELS[p.method] ?? p.method).join(', ') || '—'}
-                    </td>
-                    <td className="px-5 py-4 text-right font-semibold text-gray-900">{money(Number(r.total))}</td>
+                    {visibleColumns.includes('transactionNumber') && <td className="px-5 py-4 font-semibold text-brand-600 hover:underline text-[12px] uppercase">{r.transactionNumber}</td>}
+                    {visibleColumns.includes('createdAt') && <td className="px-5 py-4 font-medium">{new Date(r.createdAt).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>}
+                    {visibleColumns.includes('cashier') && <td className="px-5 py-4 font-medium">{r.cashier?.name ?? '—'}</td>}
+                    {visibleColumns.includes('customer') && <td className="px-5 py-4 font-medium">{r.customer?.name ?? '—'}</td>}
+                    {visibleColumns.includes('method') && <td className="px-5 py-4 text-gray-600 font-medium">{r.payments?.map((p) => p.gatewayName || (METHOD_LABELS[p.method] ?? p.method)).join(', ') || '—'}</td>}
+                    {visibleColumns.includes('total') && <td className="px-5 py-4 text-right font-bold text-gray-900">{money(Number(r.total))}</td>}
                   </tr>
                 )) : null}
               </tbody>

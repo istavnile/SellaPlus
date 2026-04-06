@@ -21,6 +21,7 @@ export interface CreateTransactionDto {
   }[];
   payments: {
     method: PaymentMethod;
+    methodName?: string;
     amount: number;
     cashTendered?: number;
     changeGiven?: number;
@@ -107,6 +108,7 @@ export class TransactionsService {
         payments: {
           create: dto.payments.map((p) => ({
             method: p.method,
+            gatewayName: p.methodName,
             amount: p.amount,
             cashTendered: p.cashTendered,
             changeGiven: p.changeGiven,
