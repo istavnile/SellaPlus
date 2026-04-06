@@ -53,6 +53,15 @@ export class TenantsController {
     return this.tenantsService.createPaymentMethod(user.tenantId, body);
   }
 
+  @Patch('payment-methods/reorder')
+  @ApiOperation({ summary: 'Reordenar métodos de pago' })
+  reorderPaymentMethods(
+    @CurrentUser() user: JwtPayload,
+    @Body() body: { order: { id: string; sortOrder: number }[] },
+  ) {
+    return this.tenantsService.reorderPaymentMethods(user.tenantId, body.order);
+  }
+
   @Patch('payment-methods/:id')
   @ApiOperation({ summary: 'Actualizar método de pago' })
   updatePaymentMethod(

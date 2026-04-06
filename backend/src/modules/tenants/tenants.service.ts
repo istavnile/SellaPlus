@@ -72,6 +72,17 @@ export class TenantsService {
     });
   }
 
+  async reorderPaymentMethods(tenantId: string, order: { id: string; sortOrder: number }[]) {
+    return this.prisma.$transaction(
+      order.map((item) =>
+        this.prisma.tenantPaymentMethod.updateMany({
+          where: { tenantId, id: item.id },
+          data: { sortOrder: item.sortOrder },
+        })
+      )
+    );
+  }
+
   async deletePaymentMethod(tenantId: string, id: string) {
     return this.prisma.tenantPaymentMethod.deleteMany({ where: { id, tenantId } });
   }

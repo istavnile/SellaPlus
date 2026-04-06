@@ -5,7 +5,7 @@ import {
   Settings, Store, Clock, AlarmClock, Ticket, Printer,
   Monitor, ShoppingBag, Bell, AlertTriangle, Barcode,
   CreditCard, Receipt, Heart, Percent,
-  DollarSign, ChevronDown, Trash2
+  DollarSign, ChevronDown, Trash2, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 import { cn } from '@/lib/utils/cn';
@@ -234,6 +234,33 @@ function MetodosPagoPanel() {
     setSaving(false);
   };
 
+  const handleMove = async (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === methods.length - 1) return;
+
+    const newMethods = [...methods];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    // Swap elements
+    const temp = newMethods[index];
+    newMethods[index] = newMethods[targetIndex];
+    newMethods[targetIndex] = temp;
+    
+    // Assign new sort order
+    const reordered = newMethods.map((m, i) => ({ ...m, sortOrder: i }));
+    setMethods(reordered); // Optimistic UI update
+
+    try {
+      await apiClient.patch('/tenant/payment-methods/reorder', {
+        order: reordered.map(m => ({ id: m.id, sortOrder: m.sortOrder }))
+      });
+      // Optionally toast.success('Orden actualizado');
+    } catch {
+      toast.error('Error al actualizar el orden');
+      load(); // Revert
+    }
+  };
+
   if (view === 'edit') {
     return (
       <div className="flex flex-col -m-4 md:-m-6">
@@ -303,9 +330,10 @@ function MetodosPagoPanel() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="grid grid-cols-[48px_1fr_80px] items-center border-b border-gray-100 bg-gray-50/50 px-4 py-3 text-sm font-medium text-gray-500">
+        <div className="grid grid-cols-[48px_1fr_60px_80px] items-center border-b border-gray-100 bg-gray-50/50 px-4 py-3 text-sm font-medium text-gray-500">
           <div />
           <div className="pl-2">Nombre</div>
+          <div className="text-center">Orden</div>
           <div />
         </div>
 
@@ -313,10 +341,10 @@ function MetodosPagoPanel() {
           {methods.length === 0 && (
             <p className="text-sm text-gray-400 text-center py-10">Cargando...</p>
           )}
-          {methods.map((m) => (
+          {methods.map((m, index) => (
             <div
               key={m.id}
-              className="grid grid-cols-[48px_1fr_80px] items-center px-4 py-4 hover:bg-gray-50 transition-colors group"
+              className="grid grid-cols-[48px_1fr_60px_80px] items-center px-4 py-4 hover:bg-gray-50 transition-colors group"
             >
               {/* Enable/disable checkbox */}
               <div className="flex justify-center">
@@ -334,6 +362,23 @@ function MetodosPagoPanel() {
               >
                 {m.name}
               </button>
+              {/* Ordering Buttons */}
+              <div className="flex items-center justify-center gap-1">
+                <button
+                  onClick={() => handleMove(index, 'up')}
+                  disabled={index === 0}
+                  className="text-gray-400 hover:text-brand-600 disabled:opacity-30 disabled:hover:text-gray-400 p-1"
+                >
+                  <ArrowUp size={14} />
+                </button>
+                <button
+                  onClick={() => handleMove(index, 'down')}
+                  disabled={index === methods.length - 1}
+                  className="text-gray-400 hover:text-brand-600 disabled:opacity-30 disabled:hover:text-gray-400 p-1"
+                >
+                  <ArrowDown size={14} />
+                </button>
+              </div>
               {/* Actions */}
               <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity pr-1">
                 <button onClick={() => handleEdit(m)} className="text-xs text-gray-400 hover:text-brand-600 px-1">Editar</button>
