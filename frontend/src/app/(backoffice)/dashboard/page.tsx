@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react';
 import { TrendingUp, Receipt, Package, Users } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 import { formatCurrency } from '@/lib/utils/currency';
+import Link from 'next/link';
 
 interface Stat {
   label: string;
   value: string;
   icon: React.ReactNode;
   color: string;
+  href: string;
 }
 
 export default function DashboardPage() {
@@ -41,24 +43,28 @@ export default function DashboardPage() {
       value: formatCurrency(sales),
       icon:  <TrendingUp size={22} />,
       color: 'bg-green-50 text-green-600',
+      href: '/reports/resumen',
     },
     {
       label: 'Transacciones',
       value: String(transactions),
       icon:  <Receipt size={22} />,
       color: 'bg-brand-50 text-brand-600',
+      href: '/reports/recibos',
     },
     {
       label: 'Productos',
       value: String(products),
       icon:  <Package size={22} />,
       color: 'bg-orange-50 text-orange-500',
+      href: '/products',
     },
     {
       label: 'Clientes',
       value: String(customers),
       icon:  <Users size={22} />,
       color: 'bg-indigo-50 text-indigo-500',
+      href: '/customers',
     },
   ];
 
@@ -68,7 +74,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((card) => (
-          <div key={card.label} className="bg-white rounded-xl border border-gray-200 p-5">
+          <Link key={card.label} href={card.href} className="bg-white rounded-xl border border-gray-200 p-5 block hover:border-gray-300 hover:shadow-md hover:-translate-y-0.5 transition-all outline-none focus:ring-2 focus:ring-brand-500/50 cursor-pointer">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">{card.label}</p>
@@ -78,7 +84,7 @@ export default function DashboardPage() {
                 {card.icon}
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
