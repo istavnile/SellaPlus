@@ -3,6 +3,9 @@
 import { useState, useEffect, useCallback, Fragment } from 'react';
 import { Menu, Transition } from '@headlessui/react';
 import { apiClient } from '@/lib/api/client';
+import { DateRangePicker } from '@/components/reports/DateRangePicker';
+import { TimeRangePicker } from '@/components/reports/TimeRangePicker';
+import { EmployeeFilter } from '@/components/reports/EmployeeFilter';
 import {
   Box, BarChart3, ChevronDown, ChevronLeft, ChevronRight,
   Clock, Users, Columns,
@@ -11,8 +14,6 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
 } from 'recharts';
-import { DateRangePicker } from '@/components/reports/DateRangePicker';
-import { TimeRangePicker } from '@/components/reports/TimeRangePicker';
 
 interface ProductRow {
   productId: string; productName: string;
@@ -38,6 +39,7 @@ export default function PorArticuloPage() {
   const [loading, setLoading] = useState(true);
   const [range, setRange]     = useState({ from: defaultFrom, to: defaultTo });
   const [time, setTime]       = useState({ from: '12 AM', to: '11 PM', isCustom: false });
+  const [cashierId, setCashierId] = useState<string | undefined>(undefined);
   const [visibleColumns, setVisibleColumns] = useState<string[]>(COLUMN_OPTIONS.map(c => c.id));
 
   const toggleColumn = (id: string) => {
@@ -46,7 +48,7 @@ export default function PorArticuloPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const params = `from=${range.from.toISOString()}&to=${range.to.toISOString()}`;
+    const params = `from=${range.from.toISOString()}&to=${range.to.toISOString()}${cashierId ? `&cashierId=${cashierId}` : ''}`;
     try {
       const r = await apiClient.get(`/reports/sales/by-product?${params}`);
       setData(r.data || []);
@@ -54,7 +56,7 @@ export default function PorArticuloPage() {
       setData([]);
     }
     setLoading(false);
-  }, [range.from, range.to]);
+  }, [range.from, range.to, cashierId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -81,6 +83,7 @@ export default function PorArticuloPage() {
 
   const top5 = data.slice(0, 5);
   const maxRevenue = top5.length > 0 ? Math.max(...top5.map((r) => Number(r.totalRevenue ?? 0))) : 1;
+  const summary = { totalRevenue: data.reduce((acc, curr) => acc + (curr.totalRevenue || 0), 0) };
 
   // Chart data: top 10 by revenue
   const chartData = data.slice(0, 10).map((r) => ({
@@ -96,13 +99,24 @@ export default function PorArticuloPage() {
       </div>
 
       <div className="p-6">
-        {/* Filters bar */}
-        <div className="flex flex-wrap gap-3 mb-6">
-          <DateRangePicker range={range} onChange={setRange} />
-          <TimeRangePicker value={time} onChange={setTime} />
-          <button className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-700 shadow-sm hover:bg-gray-50 font-medium tracking-tight transition-colors">
-            <Users size={16} className="text-gray-400" /> Todos los colaboradores <ChevronDown size={14} className="ml-1 text-gray-400" />
-          </button>
+        {/* Summary + Filters Top Bar */}
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-6">
+          <div className="flex items-center gap-6">
+            <div className="w-16 h-16 bg-white border border-gray-200 rounded-2xl flex items-center justify-center shadow-sm shrink-0 relative overflow-hidden">
+              <div className="absolute inset-0 bg-brand-50/50" />
+              <Box size={28} className="text-brand-600 relative z-10" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Ventas netas totales</p>
+              <h2 className="text-3xl font-light text-gray-900 tracking-tight">{money(Number(summary.totalRevenue ?? 0))}</h2>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:flex md:flex-row md:items-center w-full xl:w-auto gap-3">
+            <DateRangePicker range={range} onChange={setRange} />
+            <TimeRangePicker value={time} onChange={setTime} />
+            <EmployeeFilter cashierId={cashierId} onChange={setCashierId} />
+          </div>
         </div>
 
         {/* Charts / KPIs Row */}

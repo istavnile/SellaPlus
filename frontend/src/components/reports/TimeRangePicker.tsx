@@ -36,7 +36,7 @@ export function TimeRangePicker({ value, onChange }: TimeRangePickerProps) {
 
     return (
         <Popover className="relative">
-            <Popover.Button className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all font-medium min-w-[160px] justify-between shadow-sm group">
+            <Popover.Button className="flex w-full sm:w-auto items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all font-medium min-w-[160px] justify-between shadow-sm group">
                 <div className="flex items-center gap-2">
                     <Clock size={18} className="text-gray-400 group-hover:text-brand-500 transition-colors" />
                     <span className="text-gray-800">

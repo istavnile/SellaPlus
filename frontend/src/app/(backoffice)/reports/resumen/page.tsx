@@ -11,6 +11,7 @@ import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { DateRangePicker } from '@/components/reports/DateRangePicker';
 import { TimeRangePicker } from '@/components/reports/TimeRangePicker';
+import { EmployeeFilter } from '@/components/reports/EmployeeFilter';
 import { SalesChart } from '@/components/reports/SalesChart';
 import { cn } from '@/lib/utils/cn';
 
@@ -50,6 +51,7 @@ export default function ResumenPage() {
   const [loading, setLoading] = useState(true);
   const [range, setRange]     = useState({ from: defaultFrom, to: defaultTo });
   const [time, setTime]       = useState({ from: '12 AM', to: '11 PM', isCustom: false });
+  const [cashierId, setCashierId] = useState<string | undefined>(undefined);
   
   // Chart Controls
   const [chartType, setChartType] = useState<'bar' | 'area'>('area');
@@ -60,7 +62,7 @@ export default function ResumenPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const params = `from=${range.from.toISOString()}&to=${range.to.toISOString()}`;
+    const params = `from=${range.from.toISOString()}&to=${range.to.toISOString()}${cashierId ? `&cashierId=${cashierId}` : ''}`;
     try {
       const [sRes, dRes] = await Promise.all([
         apiClient.get(`/reports/sales/summary?${params}`),
@@ -80,7 +82,7 @@ export default function ResumenPage() {
       setData([]);
     }
     setLoading(false);
-  }, [range.from, range.to]);
+  }, [range.from, range.to, cashierId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -127,20 +129,10 @@ export default function ResumenPage() {
 
       <div className="p-6 bg-white border border-t-0 border-gray-200 rounded-b-xl shadow-sm mb-6">
         {/* Filters */}
-        <div className="flex flex-wrap gap-3 mb-6">
-          <DateRangePicker 
-            range={range} 
-            onChange={(r) => setRange(r)} 
-          />
-          
-          <TimeRangePicker 
-            value={time} 
-            onChange={(t) => setTime(t)} 
-          />
-          
-          <button className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-medium transition-colors shadow-sm">
-            <Users size={16} className="text-gray-400" /> Todos los colaboradores <ChevronDown size={14} className="ml-1 text-gray-400" />
-          </button>
+        <div className="grid grid-cols-1 md:flex md:flex-row md:items-center gap-3 mb-6">
+          <DateRangePicker range={range} onChange={setRange} />
+          <TimeRangePicker value={time} onChange={setTime} />
+          <EmployeeFilter cashierId={cashierId} onChange={setCashierId} />
         </div>
 
         {/* KPIs Summary Grid */}

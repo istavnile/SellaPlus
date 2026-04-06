@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { DateRangePicker } from '@/components/reports/DateRangePicker';
 import { TimeRangePicker } from '@/components/reports/TimeRangePicker';
+import { EmployeeFilter } from '@/components/reports/EmployeeFilter';
 
 interface EmployeeRow {
   employeeId: string; name: string;
@@ -39,6 +40,7 @@ export default function PorEmpleadoPage() {
   const [loading, setLoading] = useState(true);
   const [range, setRange]     = useState({ from: defaultFrom, to: defaultTo });
   const [time, setTime]       = useState({ from: '12 AM', to: '11 PM', isCustom: false });
+  const [cashierId, setCashierId] = useState<string | undefined>(undefined);
   const [visibleColumns, setVisibleColumns] = useState<string[]>(COLUMN_OPTIONS.map(c => c.id));
 
   const toggleColumn = (id: string) => {
@@ -47,7 +49,7 @@ export default function PorEmpleadoPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const params = `from=${range.from.toISOString()}&to=${range.to.toISOString()}`;
+    const params = `from=${range.from.toISOString()}&to=${range.to.toISOString()}${cashierId ? `&cashierId=${cashierId}` : ''}`;
     try {
       const r = await apiClient.get(`/reports/sales/by-employee?${params}`);
       setData(r.data || []);
@@ -55,7 +57,7 @@ export default function PorEmpleadoPage() {
       setData([]);
     }
     setLoading(false);
-  }, [range.from, range.to]);
+  }, [range.from, range.to, cashierId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -98,13 +100,10 @@ export default function PorEmpleadoPage() {
 
       <div className="p-6">
         {/* Filters bar */}
-        <div className="flex flex-wrap gap-3 mb-6">
+        <div className="grid grid-cols-1 md:flex md:flex-row md:items-center gap-3 mb-6">
           <DateRangePicker range={range} onChange={setRange} />
           <TimeRangePicker value={time} onChange={setTime} />
-          
-          <button className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-700 shadow-sm hover:bg-gray-50 font-medium tracking-tight transition-colors">
-            <Users size={16} className="text-gray-400" /> Todos los colaboradores <ChevronDown size={14} className="ml-1 text-gray-400" />
-          </button>
+          <EmployeeFilter cashierId={cashierId} onChange={setCashierId} />
         </div>
 
         {/* Data Table Area */}

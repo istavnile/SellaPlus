@@ -6,13 +6,14 @@ import { TransactionStatus } from '@prisma/client';
 export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
-  async getSalesSummary(tenantId: string, params?: { from?: Date; to?: Date }) {
+  async getSalesSummary(tenantId: string, params?: { from?: Date; to?: Date; cashierId?: string }) {
     const where = {
       tenantId,
       status: TransactionStatus.COMPLETED,
       ...(params?.from || params?.to
         ? { createdAt: { ...(params.from && { gte: params.from }), ...(params.to && { lte: params.to }) } }
         : {}),
+      ...(params?.cashierId && { cashierId: params.cashierId }),
     };
     const [transactions, totalAgg] = await Promise.all([
       this.prisma.transaction.count({ where }),
@@ -20,7 +21,7 @@ export class ReportsService {
     ]);
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
-    const todayWhere = { tenantId, status: TransactionStatus.COMPLETED, createdAt: { gte: todayStart } };
+    const todayWhere = { tenantId, status: TransactionStatus.COMPLETED, createdAt: { gte: todayStart }, ...(params?.cashierId && { cashierId: params.cashierId }) };
     const [todayTxCount, todayAgg] = await Promise.all([
       this.prisma.transaction.count({ where: todayWhere }),
       this.prisma.transaction.aggregate({ where: todayWhere, _sum: { total: true } }),
@@ -36,7 +37,7 @@ export class ReportsService {
     };
   }
 
-  async getSalesByProduct(tenantId: string, params?: { from?: Date; to?: Date }) {
+  async getSalesByProduct(tenantId: string, params?: { from?: Date; to?: Date; cashierId?: string }) {
     const items = await this.prisma.transactionItem.groupBy({
       by: ['productId', 'productName'],
       where: {
@@ -46,6 +47,7 @@ export class ReportsService {
           ...(params?.from || params?.to
             ? { createdAt: { ...(params?.from && { gte: params.from }), ...(params?.to && { lte: params.to }) } }
             : {}),
+          ...(params?.cashierId && { cashierId: params.cashierId }),
         },
       },
       _sum: { quantity: true, lineTotal: true, discountAmount: true },
@@ -62,7 +64,7 @@ export class ReportsService {
     }));
   }
 
-  async getDailySales(tenantId: string, params?: { from?: Date; to?: Date; days?: number } | number) {
+  async getDailySales(tenantId: string, params?: { from?: Date; to?: Date; days?: number; cashierId?: string } | number) {
     // Backward-compatible: accept a plain number (old signature) or params object
     let from: Date;
     let to: Date | undefined;
@@ -88,6 +90,7 @@ export class ReportsService {
         tenantId,
         status: TransactionStatus.COMPLETED,
         createdAt: { gte: from, ...(to && { lte: to }) },
+        ...(typeof params === 'object' && params?.cashierId && { cashierId: params.cashierId }),
       },
       select: { createdAt: true, total: true, discountAmount: true, subtotal: true },
       orderBy: { createdAt: 'asc' },
@@ -108,13 +111,14 @@ export class ReportsService {
     return Object.values(grouped);
   }
 
-  async getReceipts(tenantId: string, params?: { from?: Date; to?: Date }) {
+  async getReceipts(tenantId: string, params?: { from?: Date; to?: Date; skip?: number; take?: number; cashierId?: string }) {
     return this.prisma.transaction.findMany({
       where: {
         tenantId,
         ...(params?.from || params?.to
           ? { createdAt: { ...(params?.from && { gte: params.from }), ...(params?.to && { lte: params.to }) } }
           : {}),
+        ...(params?.cashierId && { cashierId: params.cashierId }),
       },
       select: {
         id: true,
@@ -130,10 +134,12 @@ export class ReportsService {
         payments: { select: { method: true, amount: true } },
       },
       orderBy: { createdAt: 'desc' },
+      skip: params?.skip,
+      take: params?.take,
     });
   }
 
-  async getSalesByEmployee(tenantId: string, params?: { from?: Date; to?: Date }) {
+  async getSalesByEmployee(tenantId: string, params?: { from?: Date; to?: Date; cashierId?: string }) {
     const transactions = await this.prisma.transaction.findMany({
       where: {
         tenantId,
@@ -141,6 +147,7 @@ export class ReportsService {
         ...(params?.from || params?.to
           ? { createdAt: { ...(params?.from && { gte: params.from }), ...(params?.to && { lte: params.to }) } }
           : {}),
+        ...(params?.cashierId && { cashierId: params.cashierId }),
       },
       select: {
         cashierId: true,
@@ -157,6 +164,7 @@ export class ReportsService {
         ...(params?.from || params?.to
           ? { createdAt: { ...(params?.from && { gte: params.from }), ...(params?.to && { lte: params.to }) } }
           : {}),
+        ...(params?.cashierId && { cashierId: params.cashierId }),
       },
       select: { cashierId: true, total: true },
     });
@@ -190,18 +198,21 @@ export class ReportsService {
     }));
   }
 
-  async getSalesByPaymentMethod(tenantId: string, params?: { from?: Date; to?: Date }) {
-    const dateFilter = params?.from || params?.to
-      ? { createdAt: { ...(params?.from && { gte: params.from }), ...(params?.to && { lte: params.to }) } }
-      : {};
+  async getSalesByPaymentMethod(tenantId: string, params?: { from?: Date; to?: Date; cashierId?: string }) {
+    const filter = {
+      ...(params?.from || params?.to
+        ? { createdAt: { ...(params?.from && { gte: params.from }), ...(params?.to && { lte: params.to }) } }
+        : {}),
+      ...(params?.cashierId && { cashierId: params.cashierId }),
+    };
 
     const [completedPayments, refundedPayments] = await Promise.all([
       this.prisma.payment.findMany({
-        where: { transaction: { tenantId, status: TransactionStatus.COMPLETED, ...dateFilter } },
+        where: { transaction: { tenantId, status: TransactionStatus.COMPLETED, ...filter } },
         select: { method: true, gatewayName: true, amount: true },
       }),
       this.prisma.payment.findMany({
-        where: { transaction: { tenantId, status: TransactionStatus.REFUNDED, ...dateFilter } },
+        where: { transaction: { tenantId, status: TransactionStatus.REFUNDED, ...filter } },
         select: { method: true, gatewayName: true, amount: true },
       }),
     ]);
@@ -228,7 +239,7 @@ export class ReportsService {
     }));
   }
 
-  async getSalesByCategory(tenantId: string, params?: { from?: Date; to?: Date }) {
+  async getSalesByCategory(tenantId: string, params?: { from?: Date; to?: Date; cashierId?: string }) {
     const items = await this.prisma.transactionItem.findMany({
       where: {
         transaction: {
@@ -237,6 +248,7 @@ export class ReportsService {
           ...(params?.from || params?.to
             ? { createdAt: { ...(params?.from && { gte: params.from }), ...(params?.to && { lte: params.to }) } }
             : {}),
+          ...(params?.cashierId && { cashierId: params.cashierId }),
         },
       },
       select: {
@@ -277,12 +289,13 @@ export class ReportsService {
     }));
   }
 
-  async getReceiptsSummary(tenantId: string, params?: { from?: Date; to?: Date }) {
+  async getReceiptsSummary(tenantId: string, params?: { from?: Date; to?: Date; cashierId?: string }) {
     const where = {
       tenantId,
       ...(params?.from || params?.to
         ? { createdAt: { ...(params?.from && { gte: params.from }), ...(params?.to && { lte: params.to }) } }
         : {}),
+      ...(params?.cashierId && { cashierId: params.cashierId }),
     };
 
     const transactions = await this.prisma.transaction.findMany({

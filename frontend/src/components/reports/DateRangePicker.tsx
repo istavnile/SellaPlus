@@ -85,14 +85,14 @@ export function DateRangePicker({ range, onChange }: DateRangePickerProps) {
 
   return (
     <Popover className="relative">
-      <Popover.Button className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all font-medium min-w-[240px] justify-between shadow-sm">
+      <Popover.Button className="flex w-full sm:w-auto items-center justify-between gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all font-medium sm:min-w-[240px] shadow-sm">
         <div className="flex items-center gap-3">
-           <div className="w-5 h-5 rounded flex items-center justify-center border border-gray-300">
+           <div className="w-5 h-5 rounded flex items-center justify-center border border-gray-300 shrink-0">
              <div className="w-2.5 h-[1px] bg-gray-400 absolute" />
            </div>
-           <span className="text-gray-800">{formatLabel()}</span>
+           <span className="text-gray-800 truncate">{formatLabel()}</span>
         </div>
-        <ChevronDown size={14} className="text-gray-400" />
+        <ChevronDown size={14} className="text-gray-400 shrink-0" />
       </Popover.Button>
 
       <Transition
