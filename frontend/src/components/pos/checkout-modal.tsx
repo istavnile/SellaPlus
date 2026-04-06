@@ -49,6 +49,8 @@ export function CheckoutModal({ isOpen, onClose, total, subtotal, cart, customer
   const [sendReceipt, setSendReceipt]     = useState(true);
   const [paymentMethods, setPaymentMethods] = useState<TenantPaymentMethod[]>(FALLBACK_METHODS);
 
+  const [selectedMethodId, setSelectedMethodId] = useState<string | null>(null);
+
   // Reset cash when total changes
   useEffect(() => { setCashTendered(total.toFixed(2)); }, [total]);
 
@@ -56,18 +58,29 @@ export function CheckoutModal({ isOpen, onClose, total, subtotal, cart, customer
   useEffect(() => { setSendReceipt(true); }, [customer]);
 
   useEffect(() => {
-    apiClient.get('/tenant/payment-methods')
-      .then((r) => {
-        const enabled = (r.data as TenantPaymentMethod[]).filter((m) => m.isEnabled);
-        setPaymentMethods(enabled.length ? enabled : FALLBACK_METHODS);
-      })
-      .catch(() => setPaymentMethods(FALLBACK_METHODS));
-  }, []);
+    // When the modal gets closed and reopened, don't re-fetch necessarily but resetting the first method is good
+    if (isOpen) {
+      apiClient.get('/tenant/payment-methods')
+        .then((r) => {
+          const enabled = (r.data as TenantPaymentMethod[]).filter((m) => m.isEnabled);
+          const activeMethods = enabled.length ? enabled : FALLBACK_METHODS;
+          setPaymentMethods(activeMethods);
+          setSelectedMethodId(activeMethods[0]?.id || null);
+        })
+        .catch(() => {
+          setPaymentMethods(FALLBACK_METHODS);
+          setSelectedMethodId(FALLBACK_METHODS[0]?.id || null);
+        });
+    }
+  }, [isOpen]);
 
-  const handleProcessPayment = async (method: string) => {
+  const handleProcessPayment = async () => {
+    const selectedPm = paymentMethods.find((m) => m.id === selectedMethodId);
+    if (!selectedPm) return;
+    
     setIsSubmitting(true);
     try {
-      const isCash   = method === 'CASH';
+      const isCash   = selectedPm.type === 'CASH';
       const tendered = isCash ? Number(cashTendered) || total : total;
 
       const payload = {
@@ -79,7 +92,7 @@ export function CheckoutModal({ isOpen, onClose, total, subtotal, cart, customer
         total,
         ...(customer ? { customerId: customer.id } : {}),
         payments: [{
-          method,
+          method: selectedPm.type,
           amount: total,
           ...(isCash ? { cashTendered: tendered, changeGiven: Math.max(0, tendered - total) } : {}),
         }],
@@ -109,7 +122,8 @@ export function CheckoutModal({ isOpen, onClose, total, subtotal, cart, customer
     }
   };
 
-  const isCashFirst = paymentMethods[0]?.type === 'CASH';
+  const isCashSelected = paymentMethods.find((m) => m.id === selectedMethodId)?.type === 'CASH';
+  const cashOk = !isCashSelected || Number(cashTendered) >= total;
 
   return (
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
@@ -168,9 +182,31 @@ export function CheckoutModal({ isOpen, onClose, total, subtotal, cart, customer
               </p>
             ) : null}
 
-            {/* Cash input */}
-            {isCashFirst && (
-              <div>
+            {/* Payment method buttons */}
+            <div className="space-y-2.5">
+              {paymentMethods.map((pm) => {
+                const Icon   = METHOD_ICONS[pm.type] ?? CircleDollarSign;
+                const isSelected = pm.id === selectedMethodId;
+                const style = isSelected 
+                  ? 'bg-brand-600 text-white border-brand-600 shadow-sm'
+                  : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-sm';
+                
+                return (
+                  <button
+                    key={pm.id}
+                    onClick={() => setSelectedMethodId(pm.id)}
+                    className={`w-full py-3.5 rounded-lg border flex justify-center items-center gap-2.5 text-sm font-bold tracking-wide transition-colors ${style}`}
+                  >
+                    <Icon size={17} />
+                    {pm.name.toUpperCase()}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Cash input (only shows if cash is selected) */}
+            {isCashSelected && (
+              <div className="mt-2 bg-gray-50 border border-gray-200 p-4 rounded-xl">
                 <label className="text-xs font-semibold text-brand-600 uppercase tracking-wider block mb-1.5">
                   Efectivo recibido
                 </label>
@@ -183,33 +219,21 @@ export function CheckoutModal({ isOpen, onClose, total, subtotal, cart, customer
                   />
                 </div>
                 {Number(cashTendered) > total && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Cambio: <span className="font-semibold text-gray-700">{format(Number(cashTendered) - total)}</span>
+                  <p className="text-xs text-gray-500 mt-2 font-medium">
+                    Cambio a entregar: <span className="font-bold text-gray-800">{format(Number(cashTendered) - total)}</span>
                   </p>
                 )}
               </div>
             )}
 
-            {/* Payment method buttons */}
-            <div className="space-y-2.5">
-              {paymentMethods.map((pm) => {
-                const Icon   = METHOD_ICONS[pm.type] ?? CircleDollarSign;
-                const style  = METHOD_STYLES[pm.type] ?? METHOD_STYLES.OTHER;
-                const isCash = pm.type === 'CASH';
-                const cashOk = !isCash || Number(cashTendered) >= total;
-                return (
-                  <button
-                    key={pm.id}
-                    disabled={isSubmitting || !cashOk}
-                    onClick={() => handleProcessPayment(pm.type)}
-                    className={`w-full py-3.5 rounded-lg flex justify-center items-center gap-2.5 text-sm font-bold tracking-wide transition-colors disabled:opacity-40 ${style}`}
-                  >
-                    <Icon size={17} />
-                    {pm.name.toUpperCase()}
-                  </button>
-                );
-              })}
-            </div>
+            {/* Confirm Payment Button */}
+            <button
+              disabled={isSubmitting || !cashOk || !selectedMethodId}
+              onClick={handleProcessPayment}
+              className="mt-2 w-full bg-gray-900 hover:bg-black text-white py-4 rounded-xl text-sm font-bold tracking-wide transition-colors disabled:opacity-40"
+            >
+              {isSubmitting ? 'PROCESANDO...' : `CONFIRMAR Y COBRAR ${format(total)}`}
+            </button>
 
           </div>
         </div>
