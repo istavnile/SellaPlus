@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell, PieChart, Pie
+  ResponsiveContainer, Cell, PieChart, Pie, Legend
 } from 'recharts';
 
 interface ProductRow {
@@ -263,6 +263,13 @@ export default function PorArticuloPage() {
                         formatter={(value) => [money(Number(value)), 'Ventas netas']}
                         contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb', outline: 'none' }}
                         itemStyle={{ color: '#374151' }}
+                      />
+                      <Legend 
+                        layout="vertical" 
+                        verticalAlign="middle" 
+                        align="right"
+                        iconType="circle"
+                        wrapperStyle={{ fontSize: 11, color: '#6b7280' }}
                       />
                     </PieChart>
                   )}
