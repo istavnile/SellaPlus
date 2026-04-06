@@ -6,7 +6,7 @@ import { DateRangePicker } from '@/components/reports/DateRangePicker';
 import { TimeRangePicker } from '@/components/reports/TimeRangePicker';
 import {
   ReceiptText, DollarSign, RotateCcw, Search, ChevronDown, ChevronLeft, ChevronRight,
-  Users, FileText, X, Mail, Loader2,
+  Users, FileText, X, Mail, Loader2, Trash2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -35,7 +35,7 @@ const defaultTo   = new Date(); defaultTo.setHours(23,59,59,999);
 
 // ─── Receipt Detail Modal ─────────────────────────────────────────────────────
 
-function ReceiptDetailModal({ id, onClose }: { id: string; onClose: () => void }) {
+function ReceiptDetailModal({ id, onClose, onDeleteSuccess }: { id: string; onClose: () => void; onDeleteSuccess: () => void; }) {
   const [tx, setTx]             = useState<ReceiptDetail | null>(null);
   const [loading, setLoading]   = useState(true);
   const [sending, setSending]   = useState(false);
@@ -75,6 +75,19 @@ function ReceiptDetailModal({ id, onClose }: { id: string; onClose: () => void }
     }
   };
 
+  const handleDelete = async () => {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta venta? Esta acción es irreversible y los datos desaparecerán de los reportes.')) return;
+    const toastId = toast.loading('Eliminando venta...');
+    try {
+      await apiClient.delete(`/transactions/${id}`);
+      toast.success('Venta eliminada con éxito', { id: toastId });
+      onDeleteSuccess();
+      handleClose();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Error al eliminar', { id: toastId });
+    }
+  };
+
   return (
     <>
       {/* Overlay */}
@@ -96,9 +109,14 @@ function ReceiptDetailModal({ id, onClose }: { id: string; onClose: () => void }
             <p className="text-xs text-gray-400 uppercase tracking-wide">Recibo</p>
             <p className="text-base font-bold text-gray-900">{tx?.transactionNumber ?? '—'}</p>
           </div>
-          <button onClick={handleClose} className="p-2 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-            <X size={18} />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button onClick={handleDelete} className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-100 transition-colors" title="Eliminar Venta">
+              <Trash2 size={18} />
+            </button>
+            <button onClick={handleClose} className="p-2 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -387,7 +405,7 @@ export default function RecibosPage() {
 
       {/* Receipt detail panel */}
       {selectedId && (
-        <ReceiptDetailModal id={selectedId} onClose={() => setSelectedId(null)} />
+        <ReceiptDetailModal id={selectedId} onClose={() => setSelectedId(null)} onDeleteSuccess={load} />
       )}
     </div>
   );

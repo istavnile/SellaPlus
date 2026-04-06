@@ -202,6 +202,19 @@ export class TransactionsService {
     return { message: 'Recibo enviado con éxito' };
   }
 
+  async delete(tenantId: string, id: string) {
+    // Verify it exists AND belongs to the tenant
+    const transaction = await this.findOne(tenantId, id);
+    
+    // Delete in correct FK dependency order
+    await this.prisma.receipt.deleteMany({ where: { transactionId: id } });
+    await this.prisma.payment.deleteMany({ where: { transactionId: id } });
+    await this.prisma.transactionItem.deleteMany({ where: { transactionId: id } });
+    await this.prisma.transaction.delete({ where: { id } });
+
+    return { message: 'Venta eliminada con éxito' };
+  }
+
   // ── Reset: borrar TODAS las ventas del tenant ───────────────────────────────
 
   async resetAllTransactions(tenantId: string): Promise<{ deleted: number }> {

@@ -63,4 +63,10 @@ export class TransactionsController {
   resetAll(@CurrentUser() user: JwtPayload) {
     return this.transactionsService.resetAllTransactions(user.tenantId);
   }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar una venta por error' })
+  deleteTransaction(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return this.transactionsService.delete(user.tenantId, id);
+  }
 }
