@@ -47,7 +47,7 @@ export default function EmployeesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Empleados</h1>
         <Link
           href="/employees/new"
@@ -72,9 +72,10 @@ export default function EmployeesPage() {
 
 
         {/* Table */}
-        <table className="w-full text-sm mt-2">
-          <thead>
-            <tr className="text-left text-gray-500 border-b border-gray-100">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm mt-2 min-w-[600px]">
+            <thead>
+              <tr className="text-left text-gray-500 border-b border-gray-100">
               <th className="px-4 py-3 w-10">
                 <input type="checkbox" className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
               </th>
@@ -110,9 +111,10 @@ export default function EmployeesPage() {
             ))}
           </tbody>
         </table>
+        </div>
 
         {/* Pagination */}
-        <div className="flex items-center gap-4 px-4 py-3 border-t border-gray-100 text-sm text-gray-500">
+        <div className="flex flex-wrap items-center gap-4 px-4 py-3 border-t border-gray-100 text-sm text-gray-500">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}

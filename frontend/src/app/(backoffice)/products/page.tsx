@@ -182,30 +182,30 @@ export default function ProductsPage() {
 
       <div className="bg-white rounded-xl border border-gray-200">
         {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-gray-100">
-          <div className="flex items-center gap-2 flex-1 min-w-[180px]">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 px-4 py-3 border-b border-gray-100">
+          <div className="flex items-center gap-2 w-full sm:flex-1 sm:min-w-[180px]">
             <Search size={16} className="text-gray-400 shrink-0" />
             <input
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="Buscar por nombre o SKU..."
-              className="flex-1 text-sm focus:outline-none"
+              className="flex-1 text-sm focus:outline-none bg-transparent"
             />
           </div>
 
-          <div className="flex items-center gap-2 ml-auto">
-            <div className="relative">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
+            <div className="relative flex-1 sm:flex-none">
               <select value={categoryId} onChange={(e) => { setCategoryId(e.target.value); setPage(1); }}
-                className="appearance-none text-sm border border-gray-200 rounded-lg px-3 py-1.5 pr-7 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer">
+                className="w-full appearance-none text-sm border border-gray-200 rounded-lg px-3 py-1.5 pr-7 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer">
                 <option value="">Todas las categorías</option>
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
               <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
 
-            <div className="relative">
+            <div className="relative flex-1 sm:flex-none">
               <select value={stockFilter} onChange={(e) => { setStockFilter(e.target.value as StockFilter); setPage(1); }}
-                className="appearance-none text-sm border border-gray-200 rounded-lg px-3 py-1.5 pr-7 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer">
+                className="w-full appearance-none text-sm border border-gray-200 rounded-lg px-3 py-1.5 pr-7 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer">
                 <option value="all">Todos los artículos</option>
                 <option value="low_stock">Inventario bajo</option>
                 <option value="out_of_stock">No disponible</option>
@@ -213,7 +213,7 @@ export default function ProductsPage() {
               <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
 
-            <span className="text-xs text-gray-400 whitespace-nowrap">{total} artículo{total !== 1 ? 's' : ''}</span>
+            <span className="text-xs text-gray-400 whitespace-nowrap w-full sm:w-auto text-right sm:text-left mt-1 sm:mt-0">{total} artículo{total !== 1 ? 's' : ''}</span>
           </div>
         </div>
 
