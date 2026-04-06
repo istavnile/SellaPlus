@@ -198,25 +198,25 @@ export class ReportsService {
     const [completedPayments, refundedPayments] = await Promise.all([
       this.prisma.payment.findMany({
         where: { transaction: { tenantId, status: TransactionStatus.COMPLETED, ...dateFilter } },
-        select: { method: true, amount: true },
+        select: { method: true, gatewayName: true, amount: true },
       }),
       this.prisma.payment.findMany({
         where: { transaction: { tenantId, status: TransactionStatus.REFUNDED, ...dateFilter } },
-        select: { method: true, amount: true },
+        select: { method: true, gatewayName: true, amount: true },
       }),
     ]);
 
     const map: Record<string, { method: string; transactions: number; amount: number; refundTransactions: number; refundAmount: number }> = {};
 
     for (const p of completedPayments) {
-      const m = p.method as string;
+      const m = (p.gatewayName || p.method) as string;
       if (!map[m]) map[m] = { method: m, transactions: 0, amount: 0, refundTransactions: 0, refundAmount: 0 };
       map[m].transactions += 1;
       map[m].amount       += Number(p.amount ?? 0);
     }
 
     for (const p of refundedPayments) {
-      const m = p.method as string;
+      const m = (p.gatewayName || p.method) as string;
       if (!map[m]) map[m] = { method: m, transactions: 0, amount: 0, refundTransactions: 0, refundAmount: 0 };
       map[m].refundTransactions += 1;
       map[m].refundAmount       += Number(p.amount ?? 0);

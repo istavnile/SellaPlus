@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
+import { Menu, Transition } from '@headlessui/react';
 import { apiClient } from '@/lib/api/client';
 import {
   Box, BarChart3, ChevronDown, ChevronLeft, ChevronRight,
@@ -26,11 +27,22 @@ const COLORS = ['#3b5bdb', '#4c6ef5', '#748ffc', '#91a7ff', '#bac8ff'];
 const defaultFrom = new Date(); defaultFrom.setDate(defaultFrom.getDate() - 29); defaultFrom.setHours(0,0,0,0);
 const defaultTo = new Date(); defaultTo.setHours(23,59,59,999);
 
+const COLUMN_OPTIONS = [
+  { id: 'productName', label: 'Artículo' },
+  { id: 'totalQuantity', label: 'Cantidad vendida' },
+  { id: 'totalRevenue', label: 'Ventas netas' }
+];
+
 export default function PorArticuloPage() {
   const [data, setData]       = useState<ProductRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [range, setRange]     = useState({ from: defaultFrom, to: defaultTo });
   const [time, setTime]       = useState({ from: '12 AM', to: '11 PM', isCustom: false });
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(COLUMN_OPTIONS.map(c => c.id));
+
+  const toggleColumn = (id: string) => {
+    setVisibleColumns(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -47,10 +59,19 @@ export default function PorArticuloPage() {
   useEffect(() => { load(); }, [load]);
 
   const exportCsv = () => {
-    const headers = 'Artículo,Cantidad vendida,Ventas netas\n';
-    const rows = data.map((r) =>
-      `${r.productName},${Number(r.totalQuantity ?? 0).toFixed(0)},${Number(r.totalRevenue ?? 0).toFixed(2)}`,
-    ).join('\n');
+    const activeCols = COLUMN_OPTIONS.filter(c => visibleColumns.includes(c.id));
+    const headers = activeCols.map(c => c.label).join(',') + '\n';
+    
+    const rows = data.map((r) => {
+      const vals = activeCols.map(c => {
+        if (c.id === 'productName') return r.productName;
+        if (c.id === 'totalQuantity') return Number(r.totalQuantity ?? 0).toFixed(0);
+        if (c.id === 'totalRevenue') return Number(r.totalRevenue ?? 0).toFixed(2);
+        return '';
+      });
+      return vals.join(',');
+    }).join('\n');
+    
     const blob = new Blob(['\uFEFF' + headers + rows], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a'); a.href = url;
@@ -196,15 +217,40 @@ export default function PorArticuloPage() {
         </div>
 
         {/* Export Table */}
-        <div className="bg-white border border-gray-200 shadow-sm rounded flex flex-col">
+        <div className="bg-white border border-gray-200 shadow-sm rounded flex flex-col overflow-visible">
           <div className="flex items-center justify-between p-3 border-b border-gray-200">
             <button onClick={exportCsv} className="flex items-center gap-2 text-xs font-bold text-gray-700 hover:text-gray-900 px-3 py-1.5 uppercase tracking-wider">
               EXPORTAR
             </button>
             <div className="flex items-center pr-2">
-              <button className="p-2 text-gray-400 hover:text-gray-600">
-                <Columns size={20} />
-              </button>
+              <Menu as="div" className="relative inline-block text-left">
+                <Menu.Button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                  <Columns size={20} />
+                </Menu.Button>
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-100"
+                  enterFrom="transform opacity-0 scale-95"
+                  enterTo="transform opacity-100 scale-100"
+                  leave="transition ease-in duration-75"
+                  leaveFrom="transform opacity-100 scale-100"
+                  leaveTo="transform opacity-0 scale-95"
+                >
+                  <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-xl ring-1 ring-black/5 focus:outline-none p-2 border border-gray-100 z-50">
+                    <div className="px-3 py-2 text-xs font-bold text-gray-500 uppercase border-b border-gray-50 mb-1 tracking-widest">
+                      Campo Mostrar
+                    </div>
+                    {COLUMN_OPTIONS.map((col) => (
+                      <div key={col.id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors" onClick={() => toggleColumn(col.id)}>
+                        <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${visibleColumns.includes(col.id) ? 'bg-gray-800 border-gray-800' : 'border-gray-300'}`}>
+                          {visibleColumns.includes(col.id) && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><path d="M20 6L9 17l-5-5"/></svg>}
+                        </div>
+                        <span className="text-sm text-gray-700 font-medium">{col.label}</span>
+                      </div>
+                    ))}
+                  </Menu.Items>
+                </Transition>
+              </Menu>
             </div>
           </div>
 
@@ -225,17 +271,28 @@ export default function PorArticuloPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs font-bold text-gray-500 border-b border-gray-200 bg-[#fbfbfb]">
-                    <th className="px-5 py-4 font-bold border-r border-gray-100">Artículo</th>
-                    <th className="px-5 py-4 font-bold">Cantidad vendida</th>
-                    <th className="px-5 py-4 font-bold text-right">Ventas netas</th>
+                    {visibleColumns.map(colId => {
+                      const col = COLUMN_OPTIONS.find(c => c.id === colId);
+                      if (!col) return null;
+                      
+                      let thClass = "px-5 py-4 font-bold ";
+                      if (colId === 'productName') thClass += "border-r border-gray-100";
+                      else if (colId === 'totalRevenue') thClass += "text-right";
+                      
+                      return (
+                        <th key={colId} className={thClass}>
+                          {col.label}
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
                   {data.map((r) => (
                     <tr key={r.productId} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="px-5 py-4 text-gray-800 font-medium">{r.productName}</td>
-                      <td className="px-5 py-4 text-gray-600 font-medium">{Number(r.totalQuantity ?? 0).toFixed(0)}</td>
-                      <td className="px-5 py-4 text-right font-medium text-gray-900">{money(Number(r.totalRevenue ?? 0))}</td>
+                      {visibleColumns.includes('productName') && <td className="px-5 py-4 text-gray-800 font-medium">{r.productName}</td>}
+                      {visibleColumns.includes('totalQuantity') && <td className="px-5 py-4 text-gray-600 font-medium">{Number(r.totalQuantity ?? 0).toFixed(0)}</td>}
+                      {visibleColumns.includes('totalRevenue') && <td className="px-5 py-4 text-right font-medium text-gray-900">{money(Number(r.totalRevenue ?? 0))}</td>}
                     </tr>
                   ))}
                 </tbody>

@@ -67,15 +67,18 @@ export function SalesChart({ data, type, grouping }: SalesChartProps) {
 
   // SVG Calculations
   const width  = 800;
-  const height = 200;
-  const padding = 40;
-  const chartW = width - padding * 2;
-  const chartH = height - padding;
+  const height = 240;
+  const pl = 80;
+  const pr = 30;
+  const pt = 20;
+  const pb = 40;
+  const chartW = width - pl - pr;
+  const chartH = height - pt - pb;
 
   const points = useMemo(() => {
     return aggregated.map((d, i) => {
-      const x = padding + (i * (chartW / Math.max(aggregated.length - 1, 1)));
-      const y = height - padding - (d.total / maxVal) * chartH;
+      const x = pl + (i * (chartW / Math.max(aggregated.length - 1, 1)));
+      const y = height - pb - (d.total / maxVal) * chartH;
       return { x, y, val: d.total, label: d.label };
     });
   }, [aggregated, maxVal, chartW, chartH]);
@@ -87,9 +90,9 @@ export function SalesChart({ data, type, grouping }: SalesChartProps) {
        d += ` L ${p.x} ${p.y}`;
     });
     // For area, close the path to the bottom
-    const closed = `${d} L ${points[points.length-1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`;
+    const closed = `${d} L ${points[points.length-1].x} ${height - pb} L ${points[0].x} ${height - pb} Z`;
     return { line: d, area: closed };
-  }, [points, height, padding]);
+  }, [points, height, pb]);
 
   return (
     <div className="w-full flex flex-col pt-5 relative min-h-[300px]">
@@ -99,15 +102,22 @@ export function SalesChart({ data, type, grouping }: SalesChartProps) {
           <>
             <div className="relative flex-1 overflow-visible">
                <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible" preserveAspectRatio="none">
-                  {/* Grid lines */}
-                  {[0, 0.25, 0.5, 0.75, 1].map(v => (
-                    <line 
-                      key={v}
-                      x1={padding} y1={height - padding - v * chartH}
-                      x2={width - padding} y2={height - padding - v * chartH}
-                      stroke="#f1f5f9" strokeWidth="1"
-                    />
-                  ))}
+                  {/* Grid lines & Y-Axis Labels */}
+                  {[0, 0.25, 0.5, 0.75, 1].map(v => {
+                    const yPos = height - pb - v * chartH;
+                    return (
+                      <g key={v}>
+                        <text x={pl - 12} y={yPos + 4} fontSize="11" fill="#9ca3af" textAnchor="end" className="font-medium tracking-tight">
+                          {money(maxVal * v)}
+                        </text>
+                        <line 
+                          x1={pl} y1={yPos}
+                          x2={width - pr} y2={yPos}
+                          stroke="#f1f5f9" strokeWidth="1"
+                        />
+                      </g>
+                    );
+                  })}
 
                   {type === 'area' && (
                     <>
@@ -139,7 +149,7 @@ export function SalesChart({ data, type, grouping }: SalesChartProps) {
                           x={p.x - barW/2}
                           y={p.y}
                           width={barW}
-                          height={height - padding - p.y}
+                          height={Math.max(0, height - pb - p.y)}
                           fill="#2563eb"
                           rx="2"
                           className="hover:fill-blue-700 transition-colors cursor-pointer"
@@ -153,7 +163,7 @@ export function SalesChart({ data, type, grouping }: SalesChartProps) {
             </div>
 
             {/* Labels */}
-            <div className="flex justify-between px-10 mt-6 overflow-hidden">
+            <div className="absolute bottom-0 w-full flex justify-between px-2 overflow-hidden" style={{ paddingLeft: `${(pl/width)*100}%`, paddingRight: `${(pr/width)*100}%` }}>
                {aggregated.filter((_, i) => aggregated.length < 10 || i % Math.ceil(aggregated.length / 8) === 0).map((d, i) => (
                   <span key={i} className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">{d.label}</span>
                ))}
