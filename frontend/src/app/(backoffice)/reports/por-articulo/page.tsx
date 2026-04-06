@@ -83,7 +83,7 @@ export default function PorArticuloPage() {
 
   const top5 = data.slice(0, 5);
   const maxRevenue = top5.length > 0 ? Math.max(...top5.map((r) => Number(r.totalRevenue ?? 0))) : 1;
-  const summary = { totalRevenue: data.reduce((acc, curr) => acc + (curr.totalRevenue || 0), 0) };
+  const summary = { totalRevenue: data.reduce((acc, curr) => acc + Number(curr.totalRevenue ?? 0), 0) };
 
   // Chart data: top 10 by revenue
   const chartData = data.slice(0, 10).map((r) => ({
