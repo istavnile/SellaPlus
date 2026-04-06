@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell,
+  ResponsiveContainer, Cell, PieChart, Pie
 } from 'recharts';
 
 interface ProductRow {
@@ -40,6 +40,7 @@ export default function PorArticuloPage() {
   const [range, setRange]     = useState({ from: defaultFrom, to: defaultTo });
   const [time, setTime]       = useState({ from: '12 AM', to: '11 PM', isCustom: false });
   const [cashierId, setCashierId] = useState<string | undefined>(undefined);
+  const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
   const [visibleColumns, setVisibleColumns] = useState<string[]>(COLUMN_OPTIONS.map(c => c.id));
 
   const toggleColumn = (id: string) => {
@@ -176,12 +177,29 @@ export default function PorArticuloPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-gray-800 uppercase">Diagrama de ventas por artículos</h3>
               <div className="flex gap-4">
-                <div className="flex items-center gap-1 text-xs text-gray-500 border-b border-gray-300 pb-0.5">
-                  Barras <ChevronDown size={12} />
-                </div>
-                <div className="flex items-center gap-1 text-xs text-gray-500 border-b border-gray-300 pb-0.5">
-                  Días <ChevronDown size={12} />
-                </div>
+                <Menu as="div" className="relative">
+                  <Menu.Button className="flex items-center gap-1 text-xs text-gray-500 border-b border-gray-300 pb-0.5 hover:text-brand-600 focus:outline-none">
+                    {chartType === 'bar' ? 'Barras' : 'Circular'} <ChevronDown size={12} />
+                  </Menu.Button>
+                  <Transition as={Fragment} enter="transition ease-out duration-100" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100" leave="transition ease-in duration-75" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
+                    <Menu.Items className="absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg border border-gray-100 focus:outline-none z-10 py-1">
+                      <Menu.Item>
+                        {({ active }) => (
+                          <button onClick={() => setChartType('bar')} className={`w-full text-left px-4 py-2 text-sm ${active ? 'bg-gray-50 text-brand-600' : 'text-gray-700'}`}>
+                            Barras
+                          </button>
+                        )}
+                      </Menu.Item>
+                      <Menu.Item>
+                        {({ active }) => (
+                          <button onClick={() => setChartType('pie')} className={`w-full text-left px-4 py-2 text-sm ${active ? 'bg-gray-50 text-brand-600' : 'text-gray-700'}`}>
+                            Circular
+                          </button>
+                        )}
+                      </Menu.Item>
+                    </Menu.Items>
+                  </Transition>
+                </Menu>
               </div>
             </div>
 
@@ -197,33 +215,57 @@ export default function PorArticuloPage() {
             ) : (
               <div className="flex-1" style={{ minHeight: 260 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 40 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      angle={-35}
-                      textAnchor="end"
-                      interval={0}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 11, fill: '#9ca3af' }}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(v) => `S/${v}`}
-                    />
-                    <Tooltip
-                      formatter={(value) => [money(Number(value)), 'Ventas netas']}
-                      contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }}
-                    />
-                    <Bar dataKey="revenue" radius={[4, 4, 0, 0]} maxBarSize={48}>
-                      {chartData.map((_, i) => (
-                        <Cell key={i} fill={i < COLORS.length ? COLORS[i] : '#748ffc'} />
-                      ))}
-                    </Bar>
-                  </BarChart>
+                  {chartType === 'bar' ? (
+                    <BarChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 40 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fontSize: 11, fill: '#6b7280' }}
+                        angle={-35}
+                        textAnchor="end"
+                        interval={0}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 11, fill: '#9ca3af' }}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(v) => `S/${v}`}
+                      />
+                      <Tooltip
+                        formatter={(value) => [money(Number(value)), 'Ventas netas']}
+                        contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }}
+                      />
+                      <Bar dataKey="revenue" radius={[4, 4, 0, 0]} maxBarSize={48}>
+                        {chartData.map((_, i) => (
+                          <Cell key={i} fill={i < COLORS.length ? COLORS[i] : '#748ffc'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  ) : (
+                    <PieChart>
+                      <Pie
+                        data={chartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={90}
+                        paddingAngle={2}
+                        dataKey="revenue"
+                        stroke="none"
+                      >
+                        {chartData.map((_, i) => (
+                          <Cell key={i} fill={i < COLORS.length ? COLORS[i] : '#748ffc'} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) => [money(Number(value)), 'Ventas netas']}
+                        contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb', outline: 'none' }}
+                        itemStyle={{ color: '#374151' }}
+                      />
+                    </PieChart>
+                  )}
                 </ResponsiveContainer>
               </div>
             )}
