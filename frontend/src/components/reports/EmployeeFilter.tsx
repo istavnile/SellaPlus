@@ -61,7 +61,7 @@ export function EmployeeFilter({ cashierId, onChange }: EmployeeFilterProps) {
                 onClick={() => onChange(undefined)}
                 className={`${
                   active ? 'bg-brand-50 text-brand-700' : 'text-gray-700'
-                } group flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors`}
+                } group flex w-full text-left items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors`}
               >
                 <div className="w-4 flex justify-center shrink-0">
                   {!cashierId && <Check size={14} className="text-brand-600" />}
@@ -78,7 +78,7 @@ export function EmployeeFilter({ cashierId, onChange }: EmployeeFilterProps) {
                   onClick={() => onChange(user.id)}
                   className={`${
                     active ? 'bg-brand-50 text-brand-700' : 'text-gray-700'
-                  } group flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors`}
+                  } group flex w-full text-left items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors`}
                 >
                   <div className="w-4 flex justify-center shrink-0">
                     {cashierId === user.id && <Check size={14} className="text-brand-600" />}
