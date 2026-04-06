@@ -253,7 +253,7 @@ export default function NewEmployeePage() {
             <button
               type="submit"
               disabled={loading}
-              className="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-2.5 rounded text-sm tracking-wide transition-colors disabled:opacity-50"
+              className="bg-brand-600 hover:bg-brand-700 text-white font-bold px-6 py-2.5 rounded text-sm tracking-wide transition-colors disabled:opacity-50 shadow-sm"
             >
               {loading ? 'GUARDANDO...' : 'GUARDAR'}
             </button>
