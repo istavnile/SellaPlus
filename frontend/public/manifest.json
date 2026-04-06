@@ -1,0 +1,18 @@
+{
+  "name": "SellaPlus POS",
+  "short_name": "SellaPlus",
+  "description": "Sistema de Punto de Venta para pequenos negocios",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f4f6",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512 any",
+      "purpose": "any maskable"
+    }
+  ]
+}

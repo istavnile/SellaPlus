@@ -48,3 +48,10 @@ coverage/
 
 # Prisma migrations (keep schema, ignore generated client)
 backend/node_modules/.prisma/
+
+# Next PWA
+frontend/public/sw.js
+frontend/public/sw.js.map
+frontend/public/workbox-*.js
+frontend/public/workbox-*.js.map
+frontend/public/fallback-*.js
