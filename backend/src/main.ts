@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -23,6 +24,8 @@ async function bootstrap() {
   app.use(require('express').urlencoded({ limit: '20mb', extended: true }));
 
   app.setGlobalPrefix('api/v1');
+
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({

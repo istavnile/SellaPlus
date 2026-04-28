@@ -47,6 +47,7 @@ services:
       - backend
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:4300
+      BACKEND_URL: http://backend:4300/api/v1
     ports:
       - "4200:4200"
 

@@ -4,8 +4,18 @@ const withPWA = withPWAInit({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
   cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
+  aggressiveFrontEndNavCaching: false,
   reloadOnOnline: true,
+  workboxOptions: {
+    skipWaiting: true,
+    clientsClaim: true,
+    runtimeCaching: [
+      {
+        urlPattern: /^\/api\/.*/i,
+        handler: "NetworkOnly",
+      },
+    ],
+  },
 });
 
 /** @type {import('next').NextConfig} */
