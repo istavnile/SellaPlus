@@ -74,55 +74,76 @@ export class TransactionsService {
   }
 
   async create(tenantId: string, cashierId: string, dto: CreateTransactionDto) {
-    // Generate sequential transaction number
-    const count = await this.prisma.transaction.count({ where: { tenantId } });
-    const transactionNumber = `TXN-${String(count + 1).padStart(6, '0')}`;
+    const MAX_RETRIES = 5;
 
-    const transaction = await this.prisma.transaction.create({
-      data: {
-        tenantId,
-        cashierId,
-        transactionNumber,
-        customerId: dto.customerId,
-        status: TransactionStatus.COMPLETED,
-        subtotal: dto.subtotal,
-        discountAmount: dto.discountAmount ?? 0,
-        taxAmount: dto.taxAmount ?? 0,
-        total: dto.total,
-        notes: dto.notes,
-        items: {
-          create: dto.items.map((item) => ({
-            productId: item.productId,
-            variantId: item.variantId,
-            productName: item.productName,
-            variantLabel: item.variantLabel,
-            sku: item.sku,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            discountAmount: item.discountAmount ?? 0,
-            taxRate: item.taxRate ?? 0,
-            taxAmount: item.taxAmount ?? 0,
-            lineTotal: item.lineTotal,
-          })),
-        },
-        payments: {
-          create: dto.payments.map((p) => ({
-            method: p.method,
-            gatewayName: p.methodName,
-            amount: p.amount,
-            cashTendered: p.cashTendered,
-            changeGiven: p.changeGiven,
-          })),
-        },
-      },
-      include: {
-        items: true,
-        payments: true,
-        customer: true,
-      },
-    });
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      // Use MAX of existing numbers (not count) so deletions don't reuse old numbers
+      const last = await this.prisma.transaction.findFirst({
+        where: { tenantId },
+        orderBy: { transactionNumber: 'desc' },
+        select: { transactionNumber: true },
+      });
 
-    return transaction;
+      let nextNumber = 1;
+      if (last) {
+        const match = last.transactionNumber.match(/TXN-(\d+)/);
+        if (match) nextNumber = parseInt(match[1], 10) + 1;
+      }
+
+      const transactionNumber = `TXN-${String(nextNumber).padStart(6, '0')}`;
+
+      try {
+        const transaction = await this.prisma.transaction.create({
+          data: {
+            tenantId,
+            cashierId,
+            transactionNumber,
+            customerId: dto.customerId,
+            status: TransactionStatus.COMPLETED,
+            subtotal: dto.subtotal,
+            discountAmount: dto.discountAmount ?? 0,
+            taxAmount: dto.taxAmount ?? 0,
+            total: dto.total,
+            notes: dto.notes,
+            items: {
+              create: dto.items.map((item) => ({
+                productId: item.productId,
+                variantId: item.variantId,
+                productName: item.productName,
+                variantLabel: item.variantLabel,
+                sku: item.sku,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                discountAmount: item.discountAmount ?? 0,
+                taxRate: item.taxRate ?? 0,
+                taxAmount: item.taxAmount ?? 0,
+                lineTotal: item.lineTotal,
+              })),
+            },
+            payments: {
+              create: dto.payments.map((p) => ({
+                method: p.method,
+                gatewayName: p.methodName,
+                amount: p.amount,
+                cashTendered: p.cashTendered,
+                changeGiven: p.changeGiven,
+              })),
+            },
+          },
+          include: {
+            items: true,
+            payments: true,
+            customer: true,
+          },
+        });
+
+        return transaction;
+      } catch (error: any) {
+        // P2002 = unique constraint violation — retry with incremented number
+        if (error?.code === 'P2002' && attempt < MAX_RETRIES - 1) continue;
+        throw error;
+      }
+    }
   }
 
   async cancel(tenantId: string, id: string) {
