@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/api/client';
 import { DateRangePicker } from '@/components/reports/DateRangePicker';
 import { TimeRangePicker } from '@/components/reports/TimeRangePicker';
 import { EmployeeFilter } from '@/components/reports/EmployeeFilter';
+import { exportToPdf } from '@/lib/utils/pdf-export';
 import { 
   ChevronDown, ChevronLeft, ChevronRight,
   Clock, Users, Search, Columns, FileText
@@ -79,6 +80,30 @@ export default function PorCategoriaPage() {
     URL.revokeObjectURL(url);
   };
 
+  const exportPdf = async () => {
+    const activeCols = COLUMN_OPTIONS.filter(c => visibleColumns.includes(c.id));
+    const headers = activeCols.map(c => c.label);
+    
+    const rows = data.map((r) => {
+      return activeCols.map(c => {
+        if (c.id === 'name') return r.name;
+        if (c.id === 'itemsSold') return Number(r.itemsSold).toFixed(0);
+        if (c.id === 'netSales') return money(r.netSales);
+        if (c.id === 'cogs') return money(r.cogs);
+        if (c.id === 'grossProfit') return money(r.grossProfit);
+        return '';
+      });
+    });
+    
+    await exportToPdf({
+      title: 'Ventas por categoría',
+      filename: 'ventas-por-categoria.pdf',
+      headers,
+      data: rows,
+      dateRange: formatDateLabel()
+    });
+  };
+
   const formatDateLabel = () => {
     return `${range.from.toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })} - ${range.to.toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })}`;
   };
@@ -101,9 +126,37 @@ export default function PorCategoriaPage() {
         {/* Data Table Area */}
         <div className="bg-white border border-gray-200 shadow-sm rounded flex flex-col overflow-visible">
           <div className="flex items-center justify-between p-3 border-b border-gray-200 text-gray-700">
-            <button onClick={exportCsv} className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 uppercase tracking-wider hover:text-black">
-              EXPORTAR
-            </button>
+            <Menu as="div" className="relative inline-block text-left">
+              <Menu.Button className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 uppercase tracking-wider hover:text-black">
+                EXPORTAR <ChevronDown size={14} />
+              </Menu.Button>
+              <Transition
+                as={Fragment}
+                enter="transition ease-out duration-100"
+                enterFrom="transform opacity-0 scale-95"
+                enterTo="transform opacity-100 scale-100"
+                leave="transition ease-in duration-75"
+                leaveFrom="transform opacity-100 scale-100"
+                leaveTo="transform opacity-0 scale-95"
+              >
+                <Menu.Items className="absolute left-0 mt-2 w-36 origin-top-left divide-y divide-gray-100 rounded-md bg-white shadow-xl ring-1 ring-black/5 focus:outline-none p-1 border border-gray-100 z-50">
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button onClick={exportCsv} className={`w-full text-left px-3 py-2 text-xs font-medium rounded-md ${active ? 'bg-gray-50 text-gray-900' : 'text-gray-700'}`}>
+                        Exportar a CSV
+                      </button>
+                    )}
+                  </Menu.Item>
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button onClick={exportPdf} className={`w-full text-left px-3 py-2 text-xs font-medium rounded-md ${active ? 'bg-gray-50 text-gray-900' : 'text-gray-700'}`}>
+                        Exportar a PDF
+                      </button>
+                    )}
+                  </Menu.Item>
+                </Menu.Items>
+              </Transition>
+            </Menu>
             <div className="flex items-center pr-2">
               <Menu as="div" className="relative inline-block text-left">
                 <Menu.Button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">

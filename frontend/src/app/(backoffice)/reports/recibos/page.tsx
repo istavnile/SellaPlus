@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/api/client';
 import { DateRangePicker } from '@/components/reports/DateRangePicker';
 import { TimeRangePicker } from '@/components/reports/TimeRangePicker';
 import { EmployeeFilter } from '@/components/reports/EmployeeFilter';
+import { exportToPdf } from '@/lib/utils/pdf-export';
 import {
   ReceiptText, DollarSign, RotateCcw, Search, ChevronDown, ChevronLeft, ChevronRight,
   Users, FileText, X, Mail, Loader2, Trash2, Columns
@@ -39,7 +40,7 @@ const defaultTo   = new Date(); defaultTo.setHours(23,59,59,999);
 const COLUMN_OPTIONS = [
   { id: 'transactionNumber', label: 'Nº. de Recibo' },
   { id: 'createdAt', label: 'Fecha' },
-  { id: 'cashier', label: 'Empleado' },
+  { id: 'cashier', label: 'Colaborador' },
   { id: 'customer', label: 'Cliente' },
   { id: 'items', label: 'Productos' },
   { id: 'method', label: 'Tipo' },
@@ -148,7 +149,7 @@ function ReceiptDetailModal({ id, onClose, onDeleteSuccess }: { id: string; onCl
                 </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Empleado</span>
+                <span className="text-gray-500">Colaborador</span>
                 <span className="text-gray-800 font-medium">{tx.cashier?.name ?? '—'}</span>
               </div>
               {tx.customer && (
@@ -308,6 +309,34 @@ export default function RecibosPage() {
     URL.revokeObjectURL(url);
   };
 
+  const exportPdf = async () => {
+    const activeCols = COLUMN_OPTIONS.filter(c => visibleColumns.includes(c.id));
+    const headers = activeCols.map(c => c.label);
+    
+    const rows = data.map((r) => {
+      return activeCols.map(c => {
+        if (c.id === 'transactionNumber') return r.transactionNumber;
+        if (c.id === 'createdAt') return new Date(r.createdAt).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        if (c.id === 'cashier') return r.cashier?.name ?? '';
+        if (c.id === 'customer') return r.customer?.name ?? '';
+        if (c.id === 'items') return r.items?.map(i => i.productName).join(', ') ?? '';
+        if (c.id === 'method') return r.payments?.map((p) => p.gatewayName || (METHOD_LABELS[p.method] ?? p.method)).join(' + ') ?? '';
+        if (c.id === 'total') return money(Number(r.total));
+        return '';
+      });
+    });
+    
+    const dateRangeLabel = `${range.from.toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })} - ${range.to.toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+
+    await exportToPdf({
+      title: 'Recibos',
+      filename: 'recibos.pdf',
+      headers,
+      data: rows,
+      dateRange: dateRangeLabel
+    });
+  };
+
   return (
     <div className="flex flex-col h-full bg-[#f4f6f8]">
       {/* Top Blue Header */}
@@ -363,9 +392,37 @@ export default function RecibosPage() {
         {/* Table */}
         <div className="bg-white border border-gray-100 shadow-sm rounded-xl flex flex-col overflow-visible">
           <div className="flex items-center justify-between p-3 border-b border-gray-100">
-            <button onClick={exportCsv} className="flex items-center gap-2 text-xs font-bold text-brand-600 hover:text-brand-700 px-4 py-2 transition-colors uppercase tracking-wider border border-brand-100 rounded-lg">
-              EXPORTAR
-            </button>
+            <Menu as="div" className="relative inline-block text-left">
+              <Menu.Button className="flex items-center gap-2 text-xs font-bold text-brand-600 hover:text-brand-700 px-4 py-2 transition-colors uppercase tracking-wider border border-brand-100 rounded-lg">
+                EXPORTAR <ChevronDown size={14} />
+              </Menu.Button>
+              <Transition
+                as={Fragment}
+                enter="transition ease-out duration-100"
+                enterFrom="transform opacity-0 scale-95"
+                enterTo="transform opacity-100 scale-100"
+                leave="transition ease-in duration-75"
+                leaveFrom="transform opacity-100 scale-100"
+                leaveTo="transform opacity-0 scale-95"
+              >
+                <Menu.Items className="absolute left-0 mt-2 w-36 origin-top-left divide-y divide-gray-100 rounded-md bg-white shadow-xl ring-1 ring-black/5 focus:outline-none p-1 border border-gray-100 z-50">
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button onClick={exportCsv} className={`w-full text-left px-3 py-2 text-xs font-medium rounded-md ${active ? 'bg-brand-50 text-brand-700' : 'text-gray-700'}`}>
+                        Exportar a CSV
+                      </button>
+                    )}
+                  </Menu.Item>
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button onClick={exportPdf} className={`w-full text-left px-3 py-2 text-xs font-medium rounded-md ${active ? 'bg-brand-50 text-brand-700' : 'text-gray-700'}`}>
+                        Exportar a PDF
+                      </button>
+                    )}
+                  </Menu.Item>
+                </Menu.Items>
+              </Transition>
+            </Menu>
             <div className="flex items-center gap-2">
               <Menu as="div" className="relative inline-block text-left">
                 <Menu.Button className="p-2 text-gray-400 hover:text-brand-600 transition-colors">

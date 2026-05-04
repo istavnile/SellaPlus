@@ -41,7 +41,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 
 const FEATURES = [
   { key: 'shifts_enabled',       icon: Clock,         label: 'Cierres de caja por turnos',        desc: 'Controla el dinero que entra y sale del cajón de efectivo.' },
-  { key: 'clock_enabled',        icon: AlarmClock,    label: 'Función de reloj',                  desc: 'Controla los tiempos de entrada y salida de tus empleados y calcula el total de horas trabajadas.' },
+  { key: 'clock_enabled',        icon: AlarmClock,    label: 'Función de reloj',                  desc: 'Controla los tiempos de entrada y salida de tus colaboradores y calcula el total de horas trabajadas.' },
   { key: 'open_tickets_enabled', icon: Ticket,        label: 'Tickets abiertos',                  desc: 'Permite guardar y editar pedidos antes de completar un pago.' },
   { key: 'kitchen_printer',      icon: Printer,       label: 'Impresoras de cocina',              desc: 'Envía comandas a la cocina a través de una impresora o una pantalla.' },
   { key: 'customer_display',     icon: Monitor,       label: 'Pantalla para clientes',            desc: 'Muestre a sus clientes información y precios en el momento de la venta.' },
@@ -114,7 +114,7 @@ function FuncionesPanel() {
 
 const SUBSCRIPTIONS = [
   { icon: '📊', title: 'Historial de ventas ilimitado',      desc: 'Vea los informes de ventas desde cualquier período de tiempo y exporte los datos en hojas de cálculo.' },
-  { icon: '👥', title: 'Gestión del personal',               desc: 'Personalice derechos de acceso a la app, registre tarjetas de asistencia y ventas por empleado.' },
+  { icon: '👥', title: 'Gestión del personal',               desc: 'Personalice derechos de acceso a la app, registre tarjetas de asistencia y ventas por colaborador.' },
   { icon: '📦', title: 'Gestión de inventario avanzado',     desc: 'Crear órdenes de compra, consultar valoraciones de inventario y gestionar stock.' },
 ];
 

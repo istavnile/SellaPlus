@@ -11,6 +11,7 @@ import {
 import { DateRangePicker } from '@/components/reports/DateRangePicker';
 import { TimeRangePicker } from '@/components/reports/TimeRangePicker';
 import { EmployeeFilter } from '@/components/reports/EmployeeFilter';
+import { exportToPdf } from '@/lib/utils/pdf-export';
 
 interface EmployeeRow {
   employeeId: string; name: string;
@@ -83,8 +84,35 @@ export default function PorEmpleadoPage() {
     const blob = new Blob(['\uFEFF' + headers + rows], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a'); a.href = url;
-    a.download = 'ventas-por-empleado.csv'; a.click();
+    a.download = 'ventas-por-colaborador.csv'; a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const exportPdf = async () => {
+    const activeCols = COLUMN_OPTIONS.filter(c => visibleColumns.includes(c.id));
+    const headers = activeCols.map(c => c.label);
+    
+    const rows = data.map((r) => {
+      return activeCols.map(c => {
+        if (c.id === 'name') return r.name;
+        if (c.id === 'grossSales') return money(r.grossSales);
+        if (c.id === 'refunds') return money(r.refunds);
+        if (c.id === 'discounts') return money(r.discounts);
+        if (c.id === 'netSales') return money(r.netSales);
+        if (c.id === 'receipts') return r.receipts;
+        if (c.id === 'avgSale') return money(r.avgSale);
+        if (c.id === 'customers') return '—';
+        return '';
+      });
+    });
+    
+    await exportToPdf({
+      title: 'Ventas por colaborador',
+      filename: 'ventas-por-colaborador.pdf',
+      headers,
+      data: rows,
+      dateRange: formatDateLabel()
+    });
   };
 
   const formatDateLabel = () => {
@@ -95,7 +123,7 @@ export default function PorEmpleadoPage() {
     <div className="flex flex-col h-full bg-[#f4f6f8]">
       {/* Top Blue Header */}
       <div className="bg-brand-600 text-white px-6 py-4 flex items-center justify-between rounded-t-lg">
-        <h1 className="text-xl font-normal">Ventas por empleado</h1>
+        <h1 className="text-xl font-normal">Ventas por colaborador</h1>
       </div>
 
       <div className="p-6">
@@ -109,9 +137,37 @@ export default function PorEmpleadoPage() {
         {/* Data Table Area */}
         <div className="bg-white border border-gray-100 shadow-sm rounded-xl flex flex-col overflow-visible">
           <div className="flex items-center justify-between p-3 border-b border-gray-100 text-gray-700">
-            <button onClick={exportCsv} className="flex items-center gap-2 text-xs font-bold text-brand-600 hover:text-brand-700 px-4 py-2 transition-colors uppercase tracking-wider border border-brand-100 rounded-lg">
-              EXPORTAR
-            </button>
+            <Menu as="div" className="relative inline-block text-left">
+              <Menu.Button className="flex items-center gap-2 text-xs font-bold text-brand-600 hover:text-brand-700 px-4 py-2 transition-colors uppercase tracking-wider border border-brand-100 rounded-lg">
+                EXPORTAR <ChevronDown size={14} />
+              </Menu.Button>
+              <Transition
+                as={Fragment}
+                enter="transition ease-out duration-100"
+                enterFrom="transform opacity-0 scale-95"
+                enterTo="transform opacity-100 scale-100"
+                leave="transition ease-in duration-75"
+                leaveFrom="transform opacity-100 scale-100"
+                leaveTo="transform opacity-0 scale-95"
+              >
+                <Menu.Items className="absolute left-0 mt-2 w-36 origin-top-left divide-y divide-gray-100 rounded-md bg-white shadow-xl ring-1 ring-black/5 focus:outline-none p-1 border border-gray-100 z-50">
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button onClick={exportCsv} className={`w-full text-left px-3 py-2 text-xs font-medium rounded-md ${active ? 'bg-brand-50 text-brand-700' : 'text-gray-700'}`}>
+                        Exportar a CSV
+                      </button>
+                    )}
+                  </Menu.Item>
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button onClick={exportPdf} className={`w-full text-left px-3 py-2 text-xs font-medium rounded-md ${active ? 'bg-brand-50 text-brand-700' : 'text-gray-700'}`}>
+                        Exportar a PDF
+                      </button>
+                    )}
+                  </Menu.Item>
+                </Menu.Items>
+              </Transition>
+            </Menu>
             <div className="flex items-center gap-2">
               <Menu as="div" className="relative inline-block text-left">
                 <Menu.Button className="p-2 text-gray-400 hover:text-brand-600 transition-colors">

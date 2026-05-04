@@ -26,7 +26,7 @@ export class EmployeesService {
         createdAt: true,
       },
     });
-    if (!user) throw new NotFoundException('Empleado no encontrado');
+    if (!user) throw new NotFoundException('Colaborador no encontrado');
     
     const fullUser = await this.prisma.user.findUnique({ where: { id }, select: { pinHash: true } });
     return { ...user, hasPin: !!fullUser?.pinHash };
@@ -42,7 +42,7 @@ export class EmployeesService {
     const existing = await this.prisma.user.findUnique({
       where: { tenantId_email: { tenantId, email: data.email } },
     });
-    if (existing) throw new ConflictException('Ya existe un empleado con ese email');
+    if (existing) throw new ConflictException('Ya existe un colaborador con ese email');
 
     const passwordHash = await bcrypt.hash(data.password || Math.random().toString(36).slice(-12), 10);
 
@@ -56,7 +56,7 @@ export class EmployeesService {
 
   async setPin(tenantId: string, id: string, pin: string) {
     const user = await this.prisma.user.findFirst({ where: { id, tenantId } });
-    if (!user) throw new NotFoundException('Empleado no encontrado');
+    if (!user) throw new NotFoundException('Colaborador no encontrado');
 
     const pinHash = await bcrypt.hash(pin, 10);
     await this.prisma.user.update({ where: { id }, data: { pinHash } });
@@ -67,7 +67,7 @@ export class EmployeesService {
     name: string; email: string; role: UserRole; isActive: boolean; clearPin: boolean;
   }>) {
     const user = await this.prisma.user.findFirst({ where: { id, tenantId } });
-    if (!user) throw new NotFoundException('Empleado no encontrado');
+    if (!user) throw new NotFoundException('Colaborador no encontrado');
 
     const { clearPin, ...rest } = data;
     const updateData: any = { ...rest };
@@ -82,7 +82,7 @@ export class EmployeesService {
 
   async remove(tenantId: string, id: string) {
     const user = await this.prisma.user.findFirst({ where: { id, tenantId } });
-    if (!user) throw new NotFoundException('Empleado no encontrado');
+    if (!user) throw new NotFoundException('Colaborador no encontrado');
     return this.prisma.user.update({ where: { id }, data: { isActive: false } });
   }
 }

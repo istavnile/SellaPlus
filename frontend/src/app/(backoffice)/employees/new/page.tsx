@@ -99,7 +99,7 @@ function PinModal({ employeeId, onDone }: { employeeId: string; onDone: () => vo
         )}
 
         <p className="text-sm text-gray-500 mb-8 leading-relaxed">
-          El PIN se usará para identificar al empleado en el TPV (Punto de Venta).
+          El PIN se usará para identificar al colaborador en el TPV (Punto de Venta).
         </p>
 
         <div className="flex justify-end gap-6">
@@ -146,7 +146,7 @@ export default function NewEmployeePage() {
       const res = await apiClient.post('/employees', data);
       setPinEmployee(res.data.id);
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Error al crear el empleado');
+      toast.error(err?.response?.data?.message || 'Error al crear el colaborador');
       setLoading(false);
     }
   };
@@ -157,10 +157,10 @@ export default function NewEmployeePage() {
         {/* Breadcrumb */}
         <div className="flex items-center gap-3 mb-6">
           <Link href="/employees" className="text-gray-400 hover:text-gray-600 transition-colors">
-            ← Empleados
+            ← Colaboradores
           </Link>
           <span className="text-gray-300">/</span>
-          <h1 className="text-2xl font-bold text-gray-900">Nuevo Empleado</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Nuevo Colaborador</h1>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)}>

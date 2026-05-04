@@ -29,14 +29,14 @@ import { apiClient } from '@/lib/api/client';
 const reportSubNav = [
   { href: '/reports/resumen',      label: 'Resumen de ventas', icon: TrendingUp },
   { href: '/reports/recibos',      label: 'Recibos',           icon: Receipt },
-  { href: '/reports/por-empleado', label: 'Por empleado',      icon: UserCheck },
+  { href: '/reports/por-empleado', label: 'Por colaborador',   icon: UserCheck },
   { href: '/reports/por-pago',     label: 'Por tipo de pago',  icon: CreditCard },
   { href: '/reports/por-categoria',label: 'Por categoría',     icon: Tag },
   { href: '/reports/por-articulo', label: 'Por artículo',      icon: Box },
 ];
 
 const employeeSubNav = [
-  { href: '/employees',       label: 'Lista de empleados', icon: List,        exact: true },
+  { href: '/employees',       label: 'Lista de colaboradores', icon: List,        exact: true },
   { href: '/employees/roles', label: 'Derechos de acceso', icon: ShieldCheck, exact: false },
 ];
 
@@ -177,7 +177,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           </Link>
         )}
 
-        {/* Empleados — expandable */}
+        {/* Colaboradores — expandable */}
         {can('employees') && (
           <>
             <button
@@ -186,7 +186,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 onEmployees ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-100')}
             >
               <UserCog size={18} />
-              <span className="flex-1 text-left">Empleados</span>
+              <span className="flex-1 text-left">Colaboradores</span>
               <ChevronDown size={14} className={cn('transition-transform', employeesOpen && 'rotate-180')} />
             </button>
             {employeesOpen && (

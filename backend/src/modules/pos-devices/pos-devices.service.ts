@@ -50,7 +50,7 @@ export class PosDevicesService {
 
     // Verify PIN
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user?.pinHash) throw new UnauthorizedException('Este empleado no tiene PIN configurado');
+    if (!user?.pinHash) throw new UnauthorizedException('Este colaborador no tiene PIN configurado');
     const valid = await bcrypt.compare(pin, user.pinHash);
     if (!valid) throw new UnauthorizedException('PIN incorrecto');
 

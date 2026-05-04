@@ -81,12 +81,12 @@ export function generateReceiptHtml(data: ReceiptData): string {
           </td>
         </tr>
 
-        <!-- META (empleado, TPV) -->
+        <!-- META (colaborador, TPV) -->
         <tr>
           <td style="padding:16px 24px;border-bottom:2px dashed #e5e7eb;">
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
-                <td style="font-size:13px;color:#6b7280;padding:3px 0;"><strong style="color:#111827;">Empleado:</strong> ${transaction.cashier?.name ?? 'Sistema'}</td>
+                <td style="font-size:13px;color:#6b7280;padding:3px 0;"><strong style="color:#111827;">Colaborador:</strong> ${transaction.cashier?.name ?? 'Sistema'}</td>
               </tr>
               <tr>
                 <td style="font-size:13px;color:#6b7280;padding:3px 0;"><strong style="color:#111827;">Nº de operación:</strong> ${transaction.transactionNumber}</td>

@@ -97,7 +97,7 @@ function PinModal({ employeeId, onDone, onCancel }: { employeeId: string; onDone
         )}
 
         <p className="text-sm text-gray-500 mb-8 leading-relaxed px-2">
-          El PIN se usará para identificar al empleado en el TPV (Punto de Venta).
+          El PIN se usará para identificar al colaborador en el TPV (Punto de Venta).
         </p>
 
         <div className="flex justify-end gap-3 pt-6">
@@ -150,7 +150,7 @@ export default function EditEmployeePage() {
         role: res.data.role,
       });
     } catch {
-      toast.error('Error al cargar el empleado');
+      toast.error('Error al cargar el colaborador');
       router.push('/employees');
     } finally {
       setLoading(false);
@@ -163,7 +163,7 @@ export default function EditEmployeePage() {
     setSaving(true);
     try {
       await apiClient.patch(`/employees/${id}`, data);
-      toast.success('Empleado actualizado');
+      toast.success('Colaborador actualizado');
       load();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Error al actualizar');
@@ -173,7 +173,7 @@ export default function EditEmployeePage() {
   };
 
   const onDeactivatePin = async () => {
-    if (!confirm('¿Desea desactivar el PIN de este empleado?')) return;
+    if (!confirm('¿Desea desactivar el PIN de este colaborador?')) return;
     try {
       await apiClient.patch(`/employees/${id}`, { clearPin: true });
       toast.success('PIN desactivado');
@@ -184,10 +184,10 @@ export default function EditEmployeePage() {
   };
 
   const onDelete = async () => {
-     if (!confirm('¿Desea dar de baja a este empleado?')) return;
+     if (!confirm('¿Desea dar de baja a este colaborador?')) return;
      try {
        await apiClient.delete(`/employees/${id}`);
-       toast.success('Empleado dado de baja');
+       toast.success('Colaborador dado de baja');
        router.push('/employees');
      } catch {
        toast.error('Error al dar de baja');
@@ -206,7 +206,7 @@ export default function EditEmployeePage() {
            </Link>
            <div>
              <div className="flex items-center gap-2 text-xs text-gray-400 font-medium uppercase tracking-widest mb-1">
-               <Link href="/employees" className="hover:text-brand-600">Empleados</Link>
+               <Link href="/employees" className="hover:text-brand-600">Colaboradores</Link>
                <span>/</span>
                <span className="text-gray-900">Editar</span>
              </div>
@@ -289,8 +289,8 @@ export default function EditEmployeePage() {
                         <h3 className="font-bold text-gray-900 tracking-tight">PIN de TPV</h3>
                         <p className="text-sm text-gray-500 mt-1 leading-relaxed max-w-sm">
                           {employee?.hasPin 
-                            ? "Este empleado tiene un PIN activo para acceder al Punto de Venta."
-                            : "Este empleado no tiene un PIN configurado."}
+                            ? "Este colaborador tiene un PIN activo para acceder al Punto de Venta."
+                            : "Este colaborador no tiene un PIN configurado."}
                         </p>
                       </div>
                    </div>
@@ -360,7 +360,7 @@ export default function EditEmployeePage() {
             <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
                <h4 className="font-bold text-xs uppercase tracking-wider text-gray-500 mb-4">Nota de Seguridad</h4>
                <p className="text-xs text-gray-400 leading-relaxed">
-                 Asegúrese de que el empleado mantenga su PIN en secreto. El PIN es necesario para todas las operaciones de venta y manejo de efectivo en el TPV.
+                 Asegúrese de que el colaborador mantenga su PIN en secreto. El PIN es necesario para todas las operaciones de venta y manejo de efectivo en el TPV.
                </p>
             </div>
           </div>

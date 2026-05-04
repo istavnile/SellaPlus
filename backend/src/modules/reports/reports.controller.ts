@@ -69,7 +69,7 @@ export class ReportsController {
   }
 
   @Get('sales/by-employee')
-  @ApiOperation({ summary: 'Ventas por empleado' })
+  @ApiOperation({ summary: 'Ventas por colaborador' })
   @ApiQuery({ name: 'from', required: false })
   @ApiQuery({ name: 'to', required: false })
   @ApiQuery({ name: 'cashierId', required: false })

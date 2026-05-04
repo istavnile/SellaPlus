@@ -14,6 +14,7 @@ import { TimeRangePicker } from '@/components/reports/TimeRangePicker';
 import { EmployeeFilter } from '@/components/reports/EmployeeFilter';
 import { SalesChart } from '@/components/reports/SalesChart';
 import { cn } from '@/lib/utils/cn';
+import { exportToPdf } from '@/lib/utils/pdf-export';
 
 // ─── types ────────────────────────────────────────────────────────────────────
 interface Summary {
@@ -106,6 +107,27 @@ export default function ResumenPage() {
     const a    = document.createElement('a'); a.href = url;
     a.download = 'resumen-ventas.csv'; a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const exportPdf = async () => {
+    const activeCols = COLUMN_OPTIONS.filter(c => visibleColumns.includes(c.id));
+    const headers = ['Fecha', ...activeCols.map(c => c.label)];
+    
+    const rows = data.map((d: any) => {
+      const values = activeCols.map(c => money((d as any)[c.id] || 0));
+      return [
+        new Date(d.date + 'T12:00:00').toLocaleDateString('es-PE', { day: 'numeric', month: 'short' }),
+        ...values
+      ];
+    });
+
+    await exportToPdf({
+      title: 'Resumen de ventas',
+      filename: 'resumen-ventas.pdf',
+      headers,
+      data: rows,
+      dateRange: formatDateLabel()
+    });
   };
 
   const formatDateLabel = () => {
@@ -209,9 +231,37 @@ export default function ResumenPage() {
       {/* Table Area with Column Picker */}
       <div className="bg-white border border-gray-200 shadow-sm rounded-xl flex flex-col overflow-visible">
         <div className="flex items-center justify-between p-3 border-b border-gray-200">
-          <button onClick={exportCsv} className="flex items-center gap-2 text-xs font-bold text-brand-600 hover:text-brand-700 px-4 py-2 uppercase tracking-wider border border-brand-100 rounded-lg transition-colors">
-            EXPORTAR
-          </button>
+          <Menu as="div" className="relative inline-block text-left">
+            <Menu.Button className="flex items-center gap-2 text-xs font-bold text-brand-600 hover:text-brand-700 px-4 py-2 uppercase tracking-wider border border-brand-100 rounded-lg transition-colors">
+              EXPORTAR <ChevronDown size={14} />
+            </Menu.Button>
+            <Transition
+              as={Fragment}
+              enter="transition ease-out duration-100"
+              enterFrom="transform opacity-0 scale-95"
+              enterTo="transform opacity-100 scale-100"
+              leave="transition ease-in duration-75"
+              leaveFrom="transform opacity-100 scale-100"
+              leaveTo="transform opacity-0 scale-95"
+            >
+              <Menu.Items className="absolute left-0 mt-2 w-36 origin-top-left divide-y divide-gray-100 rounded-md bg-white shadow-xl ring-1 ring-black/5 focus:outline-none p-1 border border-gray-100 z-50">
+                <Menu.Item>
+                  {({ active }) => (
+                    <button onClick={exportCsv} className={cn("w-full text-left px-3 py-2 text-xs font-medium rounded-md", active ? 'bg-brand-50 text-brand-700' : 'text-gray-700')}>
+                      Exportar a CSV
+                    </button>
+                  )}
+                </Menu.Item>
+                <Menu.Item>
+                  {({ active }) => (
+                    <button onClick={exportPdf} className={cn("w-full text-left px-3 py-2 text-xs font-medium rounded-md", active ? 'bg-brand-50 text-brand-700' : 'text-gray-700')}>
+                      Exportar a PDF
+                    </button>
+                  )}
+                </Menu.Item>
+              </Menu.Items>
+            </Transition>
+          </Menu>
           
           <Menu as="div" className="relative inline-block text-left">
             <Menu.Button className="p-2 text-gray-400 hover:text-brand-600 transition-colors">

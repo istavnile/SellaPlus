@@ -48,12 +48,12 @@ export default function EmployeesPage() {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Empleados</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Colaboradores</h1>
         <Link
           href="/employees/new"
           className="bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors"
         >
-          + Nuevo Empleado
+          + Nuevo Colaborador
         </Link>
       </div>
 
@@ -92,7 +92,7 @@ export default function EmployeesPage() {
               </tr>
             ) : paged.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center text-gray-400 py-10">No hay empleados todavía.</td>
+                <td colSpan={5} className="text-center text-gray-400 py-10">No hay colaboradores todavía.</td>
               </tr>
             ) : paged.map((emp) => (
               <tr key={emp.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">

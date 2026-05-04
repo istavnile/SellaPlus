@@ -13,19 +13,19 @@ export class EmployeesController {
   constructor(private employeesService: EmployeesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar empleados' })
+  @ApiOperation({ summary: 'Listar colaboradores' })
   findAll(@CurrentUser() user: JwtPayload) {
     return this.employeesService.findAll(user.tenantId);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener un empleado' })
+  @ApiOperation({ summary: 'Obtener un colaborador' })
   findOne(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.employeesService.findOne(user.tenantId, id);
   }
 
   @Post()
-  @ApiOperation({ summary: 'Crear empleado' })
+  @ApiOperation({ summary: 'Crear colaborador' })
   create(
     @CurrentUser() user: JwtPayload,
     @Body() body: { name: string; email: string; phone?: string; role: UserRole; password?: string },
@@ -44,7 +44,7 @@ export class EmployeesController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Actualizar empleado' })
+  @ApiOperation({ summary: 'Actualizar colaborador' })
   update(
     @CurrentUser() user: JwtPayload,
     @Param('id') id: string,
@@ -54,7 +54,7 @@ export class EmployeesController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Desactivar empleado' })
+  @ApiOperation({ summary: 'Desactivar colaborador' })
   remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.employeesService.remove(user.tenantId, id);
   }

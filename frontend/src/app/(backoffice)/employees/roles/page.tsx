@@ -30,7 +30,7 @@ const SECTIONS = [
   { key: 'products',   label: 'Productos' },
   { key: 'customers',  label: 'Clientes' },
   { key: 'reports',    label: 'Reportes' },
-  { key: 'employees',  label: 'Empleados' },
+  { key: 'employees',  label: 'Colaboradores' },
   { key: 'settings',   label: 'Configuración' },
   { key: 'pos',        label: 'Punto de venta (TPV)' },
 ];
@@ -138,7 +138,7 @@ export default function DerechosDeAccesoPage() {
                   <div className="min-w-0">
                     <p className="font-semibold text-gray-900 text-sm">{role.label}</p>
                     <p className="text-xs text-gray-400">
-                      {countForRole(role.key)} empleado{countForRole(role.key) !== 1 ? 's' : ''}
+                      {countForRole(role.key)} colaborador{countForRole(role.key) !== 1 ? 'es' : ''}
                     </p>
                   </div>
                 </button>
