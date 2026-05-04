@@ -8,9 +8,10 @@ interface PdfOptions {
   headers: string[];
   data: (string | number)[][];
   dateRange?: string;
+  totals?: { label: string; value: string }[];
 }
 
-export const exportToPdf = async ({ title, filename, headers, data, dateRange }: PdfOptions) => {
+export const exportToPdf = async ({ title, filename, headers, data, dateRange, totals }: PdfOptions) => {
   // Load tenant logo
   let logoData = '';
   try {
@@ -116,6 +117,26 @@ export const exportToPdf = async ({ title, filename, headers, data, dateRange }:
       overflow: 'ellipsize',
     },
   });
+
+  if (totals && totals.length > 0) {
+    const finalY: number = (doc as any).lastAutoTable?.finalY ?? startY + 20;
+    const totalsY = finalY + 8;
+
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.5);
+    doc.line(14, totalsY - 2, pageWidth - 14, totalsY - 2);
+
+    let currentY = totalsY + 6;
+    for (const t of totals) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(30, 58, 138);
+      doc.text(`${t.label}:`, pageWidth - 14 - 50, currentY);
+      doc.setTextColor(30, 30, 30);
+      doc.text(t.value, pageWidth - 14, currentY, { align: 'right' });
+      currentY += 7;
+    }
+  }
 
   doc.save(filename);
 };

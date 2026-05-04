@@ -102,12 +102,15 @@ export default function PorPagoPage() {
       });
     });
     
+    const totalNetAmount = data.reduce((sum, r) => sum + r.netAmount, 0);
+
     await exportToPdf({
       title: 'Ventas por tipo de pago',
       filename: 'ventas-por-pago.pdf',
       headers,
       data: rows,
-      dateRange: formatDateLabel()
+      dateRange: formatDateLabel(),
+      totals: [{ label: 'TOTAL MONTO NETO', value: money(totalNetAmount) }],
     });
   };
 

@@ -98,12 +98,15 @@ export default function PorArticuloPage() {
 
     const dateRangeLabel = `${range.from.toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })} - ${range.to.toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
+    const totalRevenue = data.reduce((sum, r) => sum + Number(r.totalRevenue ?? 0), 0);
+
     await exportToPdf({
       title: 'Ventas por artículo',
       filename: 'ventas-por-articulo.pdf',
       headers,
       data: rows,
-      dateRange: dateRangeLabel
+      dateRange: dateRangeLabel,
+      totals: [{ label: 'TOTAL VENTAS NETAS', value: money(totalRevenue) }],
     });
   };
 

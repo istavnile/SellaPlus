@@ -95,12 +95,15 @@ export default function PorCategoriaPage() {
       });
     });
     
+    const totalNetSales = data.reduce((sum, r) => sum + r.netSales, 0);
+
     await exportToPdf({
       title: 'Ventas por categoría',
       filename: 'ventas-por-categoria.pdf',
       headers,
       data: rows,
-      dateRange: formatDateLabel()
+      dateRange: formatDateLabel(),
+      totals: [{ label: 'TOTAL VENTAS NETAS', value: money(totalNetSales) }],
     });
   };
 

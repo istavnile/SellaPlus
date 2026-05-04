@@ -121,12 +121,15 @@ export default function ResumenPage() {
       ];
     });
 
+    const totalNetSales = data.reduce((sum, d) => sum + (d.netSales || 0), 0);
+
     await exportToPdf({
       title: 'Resumen de ventas',
       filename: 'resumen-ventas.pdf',
       headers,
       data: rows,
-      dateRange: formatDateLabel()
+      dateRange: formatDateLabel(),
+      totals: [{ label: 'TOTAL VENTAS NETAS', value: money(totalNetSales) }],
     });
   };
 

@@ -312,11 +312,18 @@ export default function RecibosPage() {
   const exportPdf = async () => {
     const activeCols = COLUMN_OPTIONS.filter(c => visibleColumns.includes(c.id));
     const headers = activeCols.map(c => c.label);
-    
+
+    const fmtDate = (iso: string) =>
+      new Date(iso).toLocaleString('es-PE', {
+        day: 'numeric', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+        timeZone: 'America/Lima',
+      });
+
     const rows = data.map((r) => {
       return activeCols.map(c => {
         if (c.id === 'transactionNumber') return r.transactionNumber;
-        if (c.id === 'createdAt') return new Date(r.createdAt).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        if (c.id === 'createdAt') return fmtDate(r.createdAt);
         if (c.id === 'cashier') return r.cashier?.name ?? '';
         if (c.id === 'customer') return r.customer?.name ?? '';
         if (c.id === 'items') return r.items?.map(i => i.productName).join(', ') ?? '';
@@ -325,7 +332,8 @@ export default function RecibosPage() {
         return '';
       });
     });
-    
+
+    const totalVentas = data.reduce((sum, r) => sum + Number(r.total), 0);
     const dateRangeLabel = `${range.from.toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })} - ${range.to.toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
     await exportToPdf({
@@ -333,7 +341,8 @@ export default function RecibosPage() {
       filename: 'recibos.pdf',
       headers,
       data: rows,
-      dateRange: dateRangeLabel
+      dateRange: dateRangeLabel,
+      totals: [{ label: 'TOTAL DE VENTAS', value: money(totalVentas) }],
     });
   };
 
