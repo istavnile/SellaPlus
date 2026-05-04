@@ -80,7 +80,13 @@ export class CustomersService {
     addressLine1?: string; addressLine2?: string; city?: string;
     state?: string; postalCode?: string; country?: string; notes?: string;
   }) {
-    return this.prisma.customer.create({ data: { tenantId, ...data } });
+    return this.prisma.customer.create({
+      data: {
+        tenantId,
+        ...data,
+        customerCode: data.customerCode || null,
+      },
+    });
   }
 
   async update(tenantId: string, id: string, data: Partial<{
@@ -89,7 +95,13 @@ export class CustomersService {
     country: string; notes: string; customerCode: string;
   }>) {
     await this.findOne(tenantId, id);
-    return this.prisma.customer.update({ where: { id }, data });
+    return this.prisma.customer.update({
+      where: { id },
+      data: {
+        ...data,
+        ...(data.customerCode !== undefined && { customerCode: data.customerCode || null }),
+      },
+    });
   }
 
   async remove(tenantId: string, id: string) {
