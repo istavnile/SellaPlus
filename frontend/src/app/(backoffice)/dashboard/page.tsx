@@ -77,7 +77,7 @@ export default function DashboardPage() {
       const token = localStorage.getItem('access_token');
       if (token) {
         const p = JSON.parse(atob(token.split('.')[1]));
-        setUserName(p.name || p.email || '');
+        setUserName(p.name || '');
       }
     } catch { /* ignore */ }
 

@@ -54,7 +54,7 @@ export class AuthService {
     });
 
     const owner = tenant.users[0];
-    return this.generateTokens(owner.id, owner.email, tenant.id, owner.role);
+    return this.generateTokens(owner.id, owner.email, owner.name, tenant.id, owner.role);
   }
 
   async login(dto: LoginDto) {
@@ -72,11 +72,11 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales invalidas');
     }
 
-    return this.generateTokens(user.id, user.email, user.tenantId, user.role);
+    return this.generateTokens(user.id, user.email, user.name, user.tenantId, user.role);
   }
 
-  private generateTokens(userId: string, email: string, tenantId: string, role: string) {
-    const payload = { sub: userId, email, tenantId, role };
+  private generateTokens(userId: string, email: string, name: string, tenantId: string, role: string) {
+    const payload = { sub: userId, email, name, tenantId, role };
 
     const accessToken = this.jwt.sign(payload);
     const refreshToken = this.jwt.sign(payload, {
