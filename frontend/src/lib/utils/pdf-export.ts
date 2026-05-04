@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { apiClient } from '@/lib/api/client';
 
 interface PdfOptions {
   title: string;
@@ -10,51 +11,71 @@ interface PdfOptions {
 }
 
 export const exportToPdf = async ({ title, filename, headers, data, dateRange }: PdfOptions) => {
-  // Load logo
-  const logoUrl = '/logo.png';
+  // Load tenant logo
   let logoData = '';
   try {
-    const img = new Image();
-    img.src = logoUrl;
-    await new Promise((resolve, reject) => {
-      img.onload = () => resolve(null);
-      img.onerror = reject;
-    });
-    const canvas = document.createElement('canvas');
-    canvas.width = img.width;
-    canvas.height = img.height;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(img, 0, 0);
-      logoData = canvas.toDataURL('image/png');
+    const r = await apiClient.get('/tenant/settings');
+    const tenantLogoUrl = r.data?.logoUrl;
+    
+    if (tenantLogoUrl) {
+      if (tenantLogoUrl.startsWith('data:image')) {
+        logoData = tenantLogoUrl;
+      } else {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.src = tenantLogoUrl;
+        await new Promise((resolve, reject) => {
+          img.onload = () => resolve(null);
+          img.onerror = reject;
+        });
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          logoData = canvas.toDataURL('image/png');
+        }
+      }
     }
   } catch (e) {
-    console.warn('Could not load logo for PDF', e);
+    console.warn('Could not load tenant logo for PDF', e);
   }
 
-  // Set orientation based on columns
-  const orientation = headers.length > 5 ? 'landscape' : 'portrait';
-  const doc = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.width;
 
   let startY = 20;
 
+  let titleX = 14;
+  let titleY = 25;
+
   // Header and Logo
   if (logoData) {
-    // Attempting reasonable logo sizing. 
-    // Logo width ~40mm.
-    const logoWidth = 35;
-    const logoHeight = 12; 
-    doc.addImage(logoData, 'PNG', 14, 15, logoWidth, logoHeight);
-    startY = 40;
+    try {
+      const imgProps = doc.getImageProperties(logoData);
+      const ratio = imgProps.width / imgProps.height;
+      let logoHeight = 14;
+      let logoWidth = logoHeight * ratio;
+
+      if (logoWidth > 45) {
+        logoWidth = 45;
+        logoHeight = logoWidth / ratio;
+      }
+      
+      doc.addImage(logoData, 'PNG', 14, 15, logoWidth, logoHeight);
+      startY = Math.max(40, 15 + logoHeight + 10);
+      titleX = 14 + logoWidth + 6;
+      titleY = 21;
+    } catch (e) {
+      console.warn('Invalid logo image format', e);
+    }
   }
 
   // Title
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
+  doc.setFontSize(16);
   doc.setTextColor(30, 58, 138); // brand-900 approx #1e3a8a
-  const titleX = logoData ? 55 : 14;
-  const titleY = logoData ? 21 : 25;
   doc.text(title, titleX, titleY);
 
   if (dateRange) {
@@ -90,9 +111,9 @@ export const exportToPdf = async ({ title, filename, headers, data, dateRange }:
     },
     styles: {
       font: 'helvetica',
-      fontSize: 9,
-      cellPadding: 4,
-      overflow: 'linebreak',
+      fontSize: 7,
+      cellPadding: 3,
+      overflow: 'ellipsize',
     },
   });
 
