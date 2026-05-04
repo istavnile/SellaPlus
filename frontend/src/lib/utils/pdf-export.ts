@@ -131,7 +131,7 @@ export const exportToPdf = async ({ title, filename, headers, data, dateRange, t
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
       doc.setTextColor(30, 58, 138);
-      doc.text(`${t.label}:`, pageWidth - 14 - 50, currentY);
+      doc.text(`${t.label}:`, pageWidth - 14 - 75, currentY);
       doc.setTextColor(30, 30, 30);
       doc.text(t.value, pageWidth - 14, currentY, { align: 'right' });
       currentY += 7;
