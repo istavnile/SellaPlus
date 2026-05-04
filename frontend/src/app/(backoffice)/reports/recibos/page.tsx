@@ -18,6 +18,7 @@ interface Receipt {
   cashier?: { name: string };
   customer?: { name: string; email?: string } | null;
   payments?: { method: string; gatewayName?: string; amount: number; cashTendered?: number; changeGiven?: number }[];
+  items?: { productName: string }[];
 }
 
 interface ReceiptDetail extends Receipt {
@@ -40,6 +41,7 @@ const COLUMN_OPTIONS = [
   { id: 'createdAt', label: 'Fecha' },
   { id: 'cashier', label: 'Empleado' },
   { id: 'customer', label: 'Cliente' },
+  { id: 'items', label: 'Productos' },
   { id: 'method', label: 'Tipo' },
   { id: 'total', label: 'Total' }
 ];
@@ -291,6 +293,7 @@ export default function RecibosPage() {
         if (c.id === 'createdAt') return r.createdAt.slice(0, 10);
         if (c.id === 'cashier') return r.cashier?.name ?? '';
         if (c.id === 'customer') return r.customer?.name ?? '';
+        if (c.id === 'items') return `"${r.items?.map(i => i.productName).join(', ') ?? ''}"`;
         if (c.id === 'method') return r.payments?.map((p) => p.gatewayName || (METHOD_LABELS[p.method] ?? p.method)).join(' + ') ?? '';
         if (c.id === 'total') return Number(r.total).toFixed(2);
         return '';
@@ -426,6 +429,11 @@ export default function RecibosPage() {
                     {visibleColumns.includes('createdAt') && <td className="px-5 py-4 font-medium whitespace-nowrap">{new Date(r.createdAt).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>}
                     {visibleColumns.includes('cashier') && <td className="px-5 py-4 font-medium whitespace-nowrap">{r.cashier?.name ?? '—'}</td>}
                     {visibleColumns.includes('customer') && <td className="px-5 py-4 font-medium whitespace-nowrap">{r.customer?.name ?? '—'}</td>}
+                    {visibleColumns.includes('items') && (
+                      <td className="px-5 py-4 text-gray-600 truncate max-w-[200px]" title={r.items?.map(i => i.productName).join(', ')}>
+                        {r.items?.map(i => i.productName).join(', ') || '—'}
+                      </td>
+                    )}
                     {visibleColumns.includes('method') && <td className="px-5 py-4 text-gray-600 font-medium whitespace-nowrap">{r.payments?.map((p) => p.gatewayName || (METHOD_LABELS[p.method] ?? p.method)).join(', ') || '—'}</td>}
                     {visibleColumns.includes('total') && <td className="px-5 py-4 text-right font-bold text-gray-900 whitespace-nowrap">{money(Number(r.total))}</td>}
                   </tr>

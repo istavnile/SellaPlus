@@ -47,7 +47,8 @@
       "Bash(echo \"Backend restarting PID $!\")",
       "Bash(lsof -ti:4200)",
       "Bash(curl -s -X POST http://localhost:4300/api/v1/transactions/cmnkhkcey000p8godb0ytpqvo/send-receipt -H 'Authorization: Bearer __TRACKED_VAR__' -H 'Content-Type: application/json' -d '{\"email\":\"istavnile@gmail.com\"}')",
-      "Read(//Volumes/Istav\\\\ T7\\\\ 2T/Desktop\\\\ MAC/12\\\\ Development/SellaPlus/frontend/src/app/\\\\\\(backoffice\\\\\\)/reports/recibos/**)"
+      "Read(//Volumes/Istav\\\\ T7\\\\ 2T/Desktop\\\\ MAC/12\\\\ Development/SellaPlus/frontend/src/app/\\\\\\(backoffice\\\\\\)/reports/recibos/**)",
+      "Bash(git push *)"
     ]
   }
 }

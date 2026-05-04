@@ -37,6 +37,7 @@ function endOfHour(d: Date)  { const res = new Date(d); res.setHours(23,59,59,99
 
 export function DateRangePicker({ range, onChange }: DateRangePickerProps) {
   const [viewDate, setViewDate] = useState(new Date(range.from));
+  const [selectingStep, setSelectingStep] = useState<'from' | 'to'>('from');
 
   const days = useMemo(() => {
     const year  = viewDate.getFullYear();
@@ -64,12 +65,17 @@ export function DateRangePicker({ range, onChange }: DateRangePickerProps) {
   }, [viewDate]);
 
   const handleDateClick = (date: Date) => {
-    // If selecting start or second click resets to range?
-    // Let's implement a simple "Start-then-End" logic
-    if (range.from.getTime() === range.to.getTime() || (date < range.from)) {
+    if (selectingStep === 'from') {
         onChange({ from: startOfDay(date), to: endOfDay(date) });
+        setSelectingStep('to');
     } else {
-        onChange({ from: range.from, to: endOfDay(date) });
+        if (date < range.from) {
+            onChange({ from: startOfDay(date), to: endOfDay(date) });
+            setSelectingStep('to');
+        } else {
+            onChange({ from: range.from, to: endOfDay(date) });
+            setSelectingStep('from');
+        }
     }
   };
 
