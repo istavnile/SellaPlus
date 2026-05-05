@@ -14,18 +14,20 @@ export default function BackofficeLayout({ children }: { children: React.ReactNo
       <TenantInitializer />
 
       {/* Mobile top bar */}
-      <div className="md:hidden fixed top-0 inset-x-0 z-30 bg-white border-b border-gray-200 flex items-center justify-between px-4 h-14 shrink-0">
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="p-2 -ml-2 text-gray-500 hover:text-gray-900"
-          aria-label="Abrir menú"
-        >
-          <Menu size={22} />
-        </button>
-        <span className="text-base font-bold text-brand-700">SellaPlus</span>
-        <Link href="/pos/touch" className="p-2 -mr-2 text-gray-500 hover:text-brand-600" aria-label="Ir al POS">
-          <ShoppingCart size={20} />
-        </Link>
+      <div className="md:hidden fixed top-0 inset-x-0 z-30 bg-white border-b border-gray-200 shrink-0" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+        <div className="flex items-center justify-between px-4 h-14">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 -ml-2 text-gray-500 hover:text-gray-900"
+            aria-label="Abrir menú"
+          >
+            <Menu size={22} />
+          </button>
+          <span className="text-base font-bold text-brand-700">SellaPlus</span>
+          <Link href="/pos/touch" className="p-2 -mr-2 text-gray-500 hover:text-brand-600" aria-label="Ir al POS">
+            <ShoppingCart size={20} />
+          </Link>
+        </div>
       </div>
 
       {/* Mobile overlay */}
@@ -53,8 +55,8 @@ export default function BackofficeLayout({ children }: { children: React.ReactNo
         <Sidebar onNavigate={() => setSidebarOpen(false)} />
       </div>
 
-      {/* Main content — padded top on mobile for the fixed bar */}
-      <main className="flex-1 overflow-y-auto pt-14 md:pt-0">
+      {/* Main content — padded top on mobile for the fixed bar + safe area */}
+      <main className="flex-1 overflow-y-auto md:pt-0" style={{ paddingTop: 'calc(3.5rem + env(safe-area-inset-top))' } as React.CSSProperties}>
         <div className="p-4 md:p-6 max-w-7xl mx-auto">{children}</div>
       </main>
     </div>
