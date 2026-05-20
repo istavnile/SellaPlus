@@ -451,11 +451,27 @@ export default function TouchPosPage() {
   };
 
   const resumeTab = (tab: SavedTab) => {
+    let currentTabs = savedTabs.filter(t => t.id !== tab.id);
+
+    // Auto-save the active cart before switching
+    if (cart.length > 0) {
+      const autoLabel = selectedCustomer?.name ?? `Cuenta #${currentTabs.length + 1}`;
+      const autoTab: SavedTab = {
+        id: crypto.randomUUID(),
+        label: autoLabel,
+        items: cart,
+        customer: selectedCustomer,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + TAB_TTL,
+      };
+      currentTabs = [...currentTabs, autoTab];
+      toast(`Carrito guardado: ${autoLabel}`, { icon: '🔖' });
+    }
+
+    setSavedTabs(currentTabs);
+    persistTabs(currentTabs);
     setCart(tab.items);
     setSelectedCustomer(tab.customer);
-    const next = savedTabs.filter(t => t.id !== tab.id);
-    setSavedTabs(next);
-    persistTabs(next);
     setTabsOpen(false);
     toast.success(`Reanudando: ${tab.label}`);
   };
