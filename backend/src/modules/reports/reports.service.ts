@@ -132,7 +132,7 @@ export class ReportsService {
         cashier: { select: { id: true, name: true } },
         customer: { select: { id: true, name: true } },
         payments: { select: { method: true, amount: true, gatewayName: true } },
-        items: { select: { productName: true } },
+        items: { select: { productName: true, quantity: true } },
       },
       orderBy: { createdAt: 'desc' },
       skip: params?.skip,
