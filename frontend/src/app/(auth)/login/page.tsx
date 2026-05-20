@@ -366,19 +366,20 @@ export default function LoginPage() {
     >
       {/* Background orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full"
-          style={{ background: 'radial-gradient(circle, #60a5fa, transparent 70%)', animation: 'blobFloat1 14s ease-in-out infinite' }} />
-        <div className="absolute top-1/2 -right-40 w-[400px] h-[400px] rounded-full"
-          style={{ background: 'radial-gradient(circle, #818cf8, transparent 70%)', animation: 'blobFloat2 19s ease-in-out infinite' }} />
-        <div className="absolute -bottom-32 left-1/4 w-[450px] h-[450px] rounded-full"
-          style={{ background: 'radial-gradient(circle, #3b82f6, transparent 70%)', animation: 'blobFloat3 16s ease-in-out infinite 2s' }} />
+        <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #60a5fa, transparent 70%)', animation: 'blobFloat1 22s ease-in-out infinite' }} />
+        <div className="absolute top-1/2 -right-40 w-[400px] h-[400px] rounded-full opacity-[0.13]"
+          style={{ background: 'radial-gradient(circle, #818cf8, transparent 70%)', animation: 'blobFloat2 30s ease-in-out infinite' }} />
+        <div className="absolute -bottom-32 left-1/4 w-[450px] h-[450px] rounded-full opacity-[0.16]"
+          style={{ background: 'radial-gradient(circle, #3b82f6, transparent 70%)', animation: 'blobFloat3 26s ease-in-out infinite 3s' }} />
       </div>
 
-      <div className={`relative flex-1 flex flex-col items-center px-5 ${screen === 'login' ? 'justify-start py-8 md:py-10' : 'justify-center py-10'}`}>
+      <div className="relative flex-1 flex flex-col items-center justify-center overflow-y-auto px-5 py-10"
+        style={{ paddingTop: 'max(2.5rem, calc(env(safe-area-inset-top) + 1.5rem))' }}>
 
         {/* ── LOGIN ─────────────────────────────────────────────────────────── */}
         {screen === 'login' && (
-          <div className="w-full max-w-4xl flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-14">
+          <div className="w-full max-w-4xl flex flex-col md:flex-row items-start gap-8 md:gap-14 my-auto">
 
             {/* Glass login card — first on mobile (order-1), second on desktop (md:order-2) */}
             <div className="w-full max-w-sm md:max-w-none md:w-[380px] shrink-0 order-1 md:order-2">
@@ -786,18 +787,18 @@ export default function LoginPage() {
         }
         .pin-shake { animation: pinShake 0.44s ease-in-out; }
         @keyframes blobFloat1 {
-          0%, 100% { transform: translate(0,0) scale(1); opacity:0.25; }
-          33% { transform: translate(28px,-22px) scale(1.07); opacity:0.35; }
-          66% { transform: translate(-18px,16px) scale(0.95); opacity:0.18; }
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          40%      { transform: translate(20px, -16px) scale(1.04); }
+          75%      { transform: translate(-12px, 10px) scale(0.97); }
         }
         @keyframes blobFloat2 {
-          0%, 100% { transform: translate(0,0) scale(1); opacity:0.15; }
-          40% { transform: translate(-28px,24px) scale(1.1); opacity:0.24; }
-          70% { transform: translate(20px,-14px) scale(0.97); opacity:0.10; }
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          35%      { transform: translate(-18px, 18px) scale(1.05); }
+          70%      { transform: translate(14px, -10px) scale(0.98); }
         }
         @keyframes blobFloat3 {
-          0%, 100% { transform: translate(0,0) scale(1); opacity:0.20; }
-          50% { transform: translate(16px,-26px) scale(1.08); opacity:0.30; }
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          50%      { transform: translate(12px, -20px) scale(1.04); }
         }
       `}</style>
     </div>
