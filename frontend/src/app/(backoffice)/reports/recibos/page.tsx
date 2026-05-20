@@ -294,7 +294,7 @@ export default function RecibosPage() {
         if (c.id === 'createdAt') return r.createdAt.slice(0, 10);
         if (c.id === 'cashier') return r.cashier?.name ?? '';
         if (c.id === 'customer') return r.customer?.name ?? '';
-        if (c.id === 'items') return `"${r.items?.map(i => i.productName).join(', ') ?? ''}"`;
+        if (c.id === 'items') return `"${r.items?.map(i => `${i.quantity} x ${i.productName}`).join(', ') ?? ''}"`;
         if (c.id === 'method') return r.payments?.map((p) => p.gatewayName || (METHOD_LABELS[p.method] ?? p.method)).join(' + ') ?? '';
         if (c.id === 'total') return Number(r.total).toFixed(2);
         return '';
@@ -326,7 +326,7 @@ export default function RecibosPage() {
         if (c.id === 'createdAt') return fmtDate(r.createdAt);
         if (c.id === 'cashier') return r.cashier?.name ?? '';
         if (c.id === 'customer') return r.customer?.name ?? '';
-        if (c.id === 'items') return r.items?.map(i => i.productName).join(', ') ?? '';
+        if (c.id === 'items') return r.items?.map(i => `${i.quantity} x ${i.productName}`).join(', ') ?? '';
         if (c.id === 'method') return r.payments?.map((p) => p.gatewayName || (METHOD_LABELS[p.method] ?? p.method)).join(' + ') ?? '';
         if (c.id === 'total') return money(Number(r.total));
         return '';
@@ -496,8 +496,8 @@ export default function RecibosPage() {
                     {visibleColumns.includes('cashier') && <td className="px-5 py-4 font-medium whitespace-nowrap">{r.cashier?.name ?? '—'}</td>}
                     {visibleColumns.includes('customer') && <td className="px-5 py-4 font-medium whitespace-nowrap">{r.customer?.name ?? '—'}</td>}
                     {visibleColumns.includes('items') && (
-                      <td className="px-5 py-4 text-gray-600 truncate max-w-[200px]" title={r.items?.map(i => i.productName).join(', ')}>
-                        {r.items?.map(i => i.productName).join(', ') || '—'}
+                      <td className="px-5 py-4 text-gray-600 truncate max-w-[200px]" title={r.items?.map(i => `${i.quantity} x ${i.productName}`).join(', ')}>
+                        {r.items?.map(i => `${i.quantity} x ${i.productName}`).join(', ') || '—'}
                       </td>
                     )}
                     {visibleColumns.includes('method') && <td className="px-5 py-4 text-gray-600 font-medium whitespace-nowrap">{r.payments?.map((p) => p.gatewayName || (METHOD_LABELS[p.method] ?? p.method)).join(', ') || '—'}</td>}
