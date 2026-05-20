@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   Search, X, Plus, Minus, ShoppingCart,
   Loader2, SlidersHorizontal, Monitor, LogOut, LayoutGrid, List, UserCircle, UserPlus, LayoutDashboard,
+  Bookmark, Clock, Trash2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { apiClient, getImageUrl } from '@/lib/api/client';
@@ -24,6 +25,36 @@ interface Product {
 }
 interface CartItem { productId: string; variantId?: string; name: string; price: number; qty: number; }
 interface PosSession { deviceId: string; sessionToken: string; deviceName: string; cashierName: string; }
+
+interface SavedTab {
+  id: string;
+  label: string;
+  items: CartItem[];
+  customer: SelectedCustomer | null;
+  createdAt: number;
+  expiresAt: number;
+}
+
+const TABS_KEY = 'pos_saved_tabs';
+const TAB_TTL  = 4 * 60 * 60 * 1000;
+
+function loadTabs(): SavedTab[] {
+  try {
+    const raw = localStorage.getItem(TABS_KEY);
+    if (!raw) return [];
+    return (JSON.parse(raw) as SavedTab[]).filter(t => t.expiresAt > Date.now());
+  } catch { return []; }
+}
+function persistTabs(tabs: SavedTab[]) {
+  localStorage.setItem(TABS_KEY, JSON.stringify(tabs));
+}
+function fmtTimeLeft(expiresAt: number): string {
+  const ms = expiresAt - Date.now();
+  if (ms <= 0) return 'Expirado';
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
 
 // ─── SVG Shape ────────────────────────────────────────────────────────────────
 
@@ -145,20 +176,31 @@ function CartSheet({
 
 function CartPanel({
   cart, updateQty, removeItem, subtotal, total, onCheckout, onClear,
-  customer, onPickCustomer,
+  customer, onPickCustomer, onSaveTab, onOpenTabs, tabCount,
 }: {
   cart: CartItem[]; updateQty: (pid: string, vid: string | undefined, d: number) => void;
   removeItem: (pid: string, vid: string | undefined) => void;
   subtotal: number; total: number; onCheckout: () => void; onClear: () => void;
-  customer: SelectedCustomer | null;
-  onPickCustomer: () => void;
+  customer: SelectedCustomer | null; onPickCustomer: () => void;
+  onSaveTab: () => void; onOpenTabs: () => void; tabCount: number;
 }) {
   const formatCurrency = useTenantStore((s) => s.format);
   return (
     <div className="hidden md:flex w-72 lg:w-80 bg-white border-l border-gray-200 flex-col shrink-0">
       <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
         <h2 className="font-semibold text-gray-900 flex items-center gap-2"><ShoppingCart size={18} />Ticket</h2>
-        {cart.length > 0 && <button onClick={onClear} className="text-xs text-gray-400 hover:text-red-500">Vaciar</button>}
+        <div className="flex items-center gap-2">
+          <button onClick={onOpenTabs} className="relative p-1.5 text-gray-400 hover:text-brand-600 transition-colors" title="Cuentas abiertas">
+            <Bookmark size={15} />
+            {tabCount > 0 && <span className="absolute -top-0.5 -right-0.5 bg-brand-600 text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">{tabCount}</span>}
+          </button>
+          {cart.length > 0 && (
+            <>
+              <button onClick={onSaveTab} className="text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors" title="Guardar y nueva cuenta">Guardar</button>
+              <button onClick={onClear} className="text-xs text-gray-400 hover:text-red-500">Vaciar</button>
+            </>
+          )}
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto">
         {cart.length === 0 ? (
@@ -213,6 +255,94 @@ function CartPanel({
   );
 }
 
+// ─── Tabs Drawer ──────────────────────────────────────────────────────────────
+
+function TabsDrawer({
+  open, onClose, tabs,
+  onSave, onResume, onDelete,
+  hasCart,
+}: {
+  open: boolean; onClose: () => void;
+  tabs: SavedTab[];
+  onSave: () => void; onResume: (tab: SavedTab) => void; onDelete: (id: string) => void;
+  hasCart: boolean;
+}) {
+  return (
+    <>
+      {open && <div className="fixed inset-0 bg-black/30 z-40" onClick={onClose} />}
+      <div className={cn(
+        'fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl z-50 flex flex-col transition-transform duration-300',
+        open ? 'translate-y-0' : 'translate-y-full',
+      )} style={{ maxHeight: '75vh' }}>
+        {/* Handle */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 bg-gray-200 rounded-full" />
+        </div>
+        <div className="flex items-center justify-between px-5 pb-3 border-b border-gray-100">
+          <div>
+            <h2 className="font-bold text-gray-900 flex items-center gap-2">
+              <Bookmark size={16} className="text-brand-600" /> Cuentas abiertas
+            </h2>
+            <p className="text-xs text-gray-400 mt-0.5">Se guardan hasta 4 horas</p>
+          </div>
+          <button onClick={onClose}><X size={20} className="text-gray-400" /></button>
+        </div>
+        {/* Save current cart */}
+        {hasCart && (
+          <div className="px-5 pt-3 pb-2">
+            <button
+              onClick={onSave}
+              className="w-full flex items-center justify-center gap-2 bg-brand-600 text-white text-sm font-semibold py-3 rounded-xl hover:bg-brand-700 active:scale-[0.98] transition-all"
+            >
+              <Bookmark size={15} /> Guardar carrito actual
+            </button>
+          </div>
+        )}
+        {/* Tabs list */}
+        <div className="flex-1 overflow-y-auto px-5 py-2 space-y-2">
+          {tabs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-gray-300">
+              <Bookmark size={32} strokeWidth={1} />
+              <p className="text-sm mt-2">Sin cuentas guardadas</p>
+            </div>
+          ) : (
+            tabs.map((tab) => (
+              <div key={tab.id}
+                className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate">{tab.label}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {tab.items.length} ítem{tab.items.length !== 1 ? 's' : ''} ·{' '}
+                    {tab.customer?.name ?? 'Sin cliente'}
+                  </p>
+                  <p className="text-[11px] text-orange-400 mt-0.5 flex items-center gap-1">
+                    <Clock size={10} /> {fmtTimeLeft(tab.expiresAt)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => onResume(tab)}
+                    className="text-xs font-semibold text-brand-600 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    Reanudar
+                  </button>
+                  <button
+                    onClick={() => onDelete(tab.id)}
+                    className="p-1.5 text-gray-300 hover:text-red-400 transition-colors"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+        <div className="h-safe-bottom pb-4" />
+      </div>
+    </>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function TouchPosPage() {
@@ -233,10 +363,13 @@ export default function TouchPosPage() {
   const [isCustomerOpen,   setIsCustomerOpen]   = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<SelectedCustomer | null>(null);
   const [session,     setSession]     = useState<PosSession | null>(null);
+  const [savedTabs,   setSavedTabs]   = useState<SavedTab[]>([]);
+  const [tabsOpen,    setTabsOpen]    = useState(false);
 
   useEffect(() => {
     const raw = typeof window !== 'undefined' ? localStorage.getItem('pos_session') : null;
     if (raw) { try { setSession(JSON.parse(raw)); } catch { /* ignore */ } }
+    setSavedTabs(loadTabs());
   }, []);
 
   const load = useCallback(() => {
@@ -294,6 +427,43 @@ export default function TouchPosPage() {
   const handleSuccess = () => {
     setCart([]);
     setSelectedCustomer(null);
+  };
+
+  const saveCurrentTab = () => {
+    if (cart.length === 0) return;
+    const activeTabs = loadTabs();
+    const autoLabel = selectedCustomer?.name ?? `Cuenta #${activeTabs.length + 1}`;
+    const tab: SavedTab = {
+      id: crypto.randomUUID(),
+      label: autoLabel,
+      items: cart,
+      customer: selectedCustomer,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + TAB_TTL,
+    };
+    const next = [...activeTabs, tab];
+    setSavedTabs(next);
+    persistTabs(next);
+    setCart([]);
+    setSelectedCustomer(null);
+    toast.success(`Cuenta guardada: ${tab.label}`);
+    setTabsOpen(false);
+  };
+
+  const resumeTab = (tab: SavedTab) => {
+    setCart(tab.items);
+    setSelectedCustomer(tab.customer);
+    const next = savedTabs.filter(t => t.id !== tab.id);
+    setSavedTabs(next);
+    persistTabs(next);
+    setTabsOpen(false);
+    toast.success(`Reanudando: ${tab.label}`);
+  };
+
+  const deleteTab = (tabId: string) => {
+    const next = savedTabs.filter(t => t.id !== tabId);
+    setSavedTabs(next);
+    persistTabs(next);
   };
 
   return (
@@ -464,15 +634,31 @@ export default function TouchPosPage() {
           onClear={() => setCart([])}
           customer={selectedCustomer}
           onPickCustomer={() => setIsCustomerOpen(true)}
+          onSaveTab={saveCurrentTab}
+          onOpenTabs={() => setTabsOpen(true)}
+          tabCount={savedTabs.length}
         />
       </div>
 
       {/* ── Mobile floating cart button ───────────────────────────────────── */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 safe-bottom pointer-events-none">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 safe-bottom pointer-events-none flex items-end gap-3">
+        {/* Tabs pill button */}
+        <button
+          onClick={() => setTabsOpen(true)}
+          className="pointer-events-auto relative flex items-center gap-1.5 bg-white border border-gray-200 shadow-lg text-gray-700 font-semibold text-sm px-3.5 py-3.5 rounded-2xl shrink-0 active:scale-95 transition-all"
+        >
+          <Bookmark size={18} className="text-brand-600" />
+          {savedTabs.length > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 bg-brand-600 text-white text-[10px] font-bold w-4.5 h-4.5 min-w-[18px] min-h-[18px] rounded-full flex items-center justify-center px-1">
+              {savedTabs.length}
+            </span>
+          )}
+        </button>
+
         <button
           onClick={() => setCartOpen(true)}
           className={cn(
-            'w-full pointer-events-auto flex items-center justify-between bg-brand-600 text-white px-5 py-4 rounded-2xl shadow-xl shadow-brand-200 transition-all active:scale-[0.98]',
+            'flex-1 pointer-events-auto flex items-center justify-between bg-brand-600 text-white px-5 py-4 rounded-2xl shadow-xl shadow-brand-200 transition-all active:scale-[0.98]',
             cart.length === 0 && 'opacity-50',
           )}
         >
@@ -508,6 +694,16 @@ export default function TouchPosPage() {
         onCheckout={() => setIsCheckoutOpen(true)}
         customer={selectedCustomer}
         onPickCustomer={() => { setCartOpen(false); setIsCustomerOpen(true); }}
+      />
+
+      {/* Tabs drawer */}
+      <TabsDrawer
+        open={tabsOpen} onClose={() => setTabsOpen(false)}
+        tabs={savedTabs}
+        onSave={saveCurrentTab}
+        onResume={resumeTab}
+        onDelete={deleteTab}
+        hasCart={cart.length > 0}
       />
 
       {/* Customer picker modal */}

@@ -24,7 +24,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-type Screen = 'login' | 'mode-picker' | 'tpv-list' | 'pin-lock' | 'pin-create' | 'pin-confirm';
+type Screen = 'login' | 'forgot-password' | 'forgot-sent' | 'mode-picker' | 'tpv-list' | 'pin-lock' | 'pin-create' | 'pin-confirm';
 
 interface PosDevice {
   id: string;
@@ -186,10 +186,12 @@ export default function LoginPage() {
   const router    = useRouter();
   const setTokens = useAuthStore((s) => s.setTokens);
 
-  const [loading,    setLoading]    = useState(false);
-  const [showPass,   setShowPass]   = useState(false);
-  const [screen,     setScreen]     = useState<Screen>('login');
-  const [userRole,   setUserRole]   = useState('');
+  const [loading,        setLoading]       = useState(false);
+  const [showPass,       setShowPass]      = useState(false);
+  const [screen,         setScreen]        = useState<Screen>('login');
+  const [userRole,       setUserRole]      = useState('');
+  const [forgotEmail,    setForgotEmail]   = useState('');
+  const [forgotLoading,  setForgotLoading] = useState(false);
 
   const [devices,     setDevices]     = useState<PosDevice[]>([]);
   const [devLoading,  setDevLoading]  = useState(false);
@@ -342,6 +344,17 @@ export default function LoginPage() {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) return;
+    setForgotLoading(true);
+    try {
+      await apiClient.post('/auth/forgot-password', { email: forgotEmail.trim() });
+    } catch { /* don't reveal whether email exists */ }
+    setForgotLoading(false);
+    setScreen('forgot-sent');
+  };
+
   const availableDevices = devices.filter((d) => d.isActive && !d.currentCashier);
   const inUseDevices     = devices.filter((d) => d.isActive && d.currentCashier);
   const canCreateTpv     = userRole === 'OWNER' || userRole === 'ADMIN';
@@ -353,15 +366,15 @@ export default function LoginPage() {
     >
       {/* Background orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full opacity-25"
-          style={{ background: 'radial-gradient(circle, #60a5fa, transparent 70%)' }} />
-        <div className="absolute top-1/2 -right-40 w-[400px] h-[400px] rounded-full opacity-15"
-          style={{ background: 'radial-gradient(circle, #818cf8, transparent 70%)' }} />
-        <div className="absolute -bottom-32 left-1/4 w-[450px] h-[450px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #3b82f6, transparent 70%)' }} />
+        <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full"
+          style={{ background: 'radial-gradient(circle, #60a5fa, transparent 70%)', animation: 'blobFloat1 14s ease-in-out infinite' }} />
+        <div className="absolute top-1/2 -right-40 w-[400px] h-[400px] rounded-full"
+          style={{ background: 'radial-gradient(circle, #818cf8, transparent 70%)', animation: 'blobFloat2 19s ease-in-out infinite' }} />
+        <div className="absolute -bottom-32 left-1/4 w-[450px] h-[450px] rounded-full"
+          style={{ background: 'radial-gradient(circle, #3b82f6, transparent 70%)', animation: 'blobFloat3 16s ease-in-out infinite 2s' }} />
       </div>
 
-      <div className="relative flex-1 flex flex-col items-center justify-center px-5 py-10">
+      <div className={`relative flex-1 flex flex-col items-center px-5 ${screen === 'login' ? 'justify-start py-8 md:py-10' : 'justify-center py-10'}`}>
 
         {/* ── LOGIN ─────────────────────────────────────────────────────────── */}
         {screen === 'login' && (
@@ -454,12 +467,18 @@ export default function LoginPage() {
                     </button>
                   </form>
 
-                  <p className="text-center text-sm text-white/35 mt-6">
-                    ¿No tienes cuenta?{' '}
-                    <a href="/register" className="text-white/75 font-medium hover:text-white transition-colors">
-                      Registra tu negocio
+                  <div className="flex items-center justify-between mt-5">
+                    <button
+                      type="button"
+                      onClick={() => { setForgotEmail(''); setScreen('forgot-password'); }}
+                      className="text-sm text-white/40 hover:text-white/70 transition-colors"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                    <a href="/register" className="text-sm text-white/55 font-medium hover:text-white transition-colors">
+                      Registrarse
                     </a>
-                  </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -479,6 +498,62 @@ export default function LoginPage() {
               </div>
             </div>
 
+          </div>
+        )}
+
+        {/* ── FORGOT PASSWORD ─────────────────────────────────────── */}
+        {screen === 'forgot-password' && (
+          <div className="w-full max-w-sm">
+            <BackBtn onClick={() => setScreen('login')} />
+            <div className="rounded-3xl overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.4)] relative"
+              style={{ background: 'rgba(255,255,255,0.09)', backdropFilter: 'blur(28px) saturate(180%)', border: '1px solid rgba(255,255,255,0.18)' }}>
+              <div className="absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.5),transparent)' }} />
+              <div className="p-7">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5"
+                  style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                  <ShieldCheck size={22} className="text-white" />
+                </div>
+                <h2 className="text-xl font-semibold text-white mb-1">Recuperar contraseña</h2>
+                <p className="text-white/45 text-sm mb-6">Escribe tu correo y te enviaremos un enlace para restablecer tu contraseña.</p>
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-white/65 mb-1.5">Email</label>
+                    <input
+                      type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)}
+                      autoComplete="email" inputMode="email" placeholder="tu@negocio.com" required
+                      className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-white/25 focus:outline-none"
+                      style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.14)' }}
+                      onFocus={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)'}
+                      onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'}
+                    />
+                  </div>
+                  <button type="submit" disabled={forgotLoading}
+                    className="w-full font-semibold py-3 rounded-xl transition-all disabled:opacity-50 text-sm shadow-lg active:scale-[0.98]"
+                    style={{ background: 'rgba(255,255,255,0.95)', color: '#1e3a8a' }}>
+                    {forgotLoading ? <span className="flex items-center justify-center gap-2"><Loader2 size={15} className="animate-spin" />Enviando...</span> : 'Enviar enlace'}
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── FORGOT SENT ──────────────────────────────────────────── */}
+        {screen === 'forgot-sent' && (
+          <div className="w-full max-w-sm text-center">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg"
+              style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)' }}>
+              <ShieldCheck size={28} className="text-green-300" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Revisa tu correo</h2>
+            <p className="text-white/55 text-sm mb-8 leading-relaxed">
+              Si existe una cuenta con ese email, recibirás un enlace para restablecer tu contraseña en los próximos minutos.
+            </p>
+            <button onClick={() => setScreen('login')}
+              className="font-semibold py-3 px-8 rounded-xl text-sm transition-all active:scale-[0.98]"
+              style={{ background: 'rgba(255,255,255,0.95)', color: '#1e3a8a' }}>
+              Volver al inicio de sesión
+            </button>
           </div>
         )}
 
@@ -710,6 +785,20 @@ export default function LoginPage() {
           80%       { transform: translateX(5px); }
         }
         .pin-shake { animation: pinShake 0.44s ease-in-out; }
+        @keyframes blobFloat1 {
+          0%, 100% { transform: translate(0,0) scale(1); opacity:0.25; }
+          33% { transform: translate(28px,-22px) scale(1.07); opacity:0.35; }
+          66% { transform: translate(-18px,16px) scale(0.95); opacity:0.18; }
+        }
+        @keyframes blobFloat2 {
+          0%, 100% { transform: translate(0,0) scale(1); opacity:0.15; }
+          40% { transform: translate(-28px,24px) scale(1.1); opacity:0.24; }
+          70% { transform: translate(20px,-14px) scale(0.97); opacity:0.10; }
+        }
+        @keyframes blobFloat3 {
+          0%, 100% { transform: translate(0,0) scale(1); opacity:0.20; }
+          50% { transform: translate(16px,-26px) scale(1.08); opacity:0.30; }
+        }
       `}</style>
     </div>
   );

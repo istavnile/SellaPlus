@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { TrendingUp, Receipt, Package, Users, ArrowUpRight, Store, CreditCard } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import {
+  TrendingUp, Receipt, Package, Users, ArrowUpRight, Store, CreditCard, Eye, EyeOff,
+} from 'lucide-react';
 import Link from 'next/link';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -53,6 +55,34 @@ function Skeleton({ className = '' }: { className?: string }) {
   return <div className={`animate-pulse bg-gray-100 rounded-lg ${className}`} />;
 }
 
+// ─── Section wrapper ──────────────────────────────────────────────────────────
+
+function Section({ id, label, hidden, onToggle, delay = 0, children }: {
+  id: string; label: string; hidden: boolean;
+  onToggle: (id: string) => void; delay?: number; children: React.ReactNode;
+}) {
+  return (
+    <div className="animate-fade-in-up" style={{ animationDelay: `${delay}ms` }}>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">{label}</p>
+        <button
+          onClick={() => onToggle(id)}
+          className="p-1 rounded-lg text-gray-300 hover:text-gray-500 hover:bg-gray-100 transition-colors"
+          title={hidden ? 'Mostrar sección' : 'Ocultar sección'}
+        >
+          {hidden ? <Eye size={13} /> : <EyeOff size={13} />}
+        </button>
+      </div>
+      <div
+        className="overflow-hidden transition-all duration-300"
+        style={{ maxHeight: hidden ? 0 : 2000, opacity: hidden ? 0 : 1 }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
@@ -65,6 +95,8 @@ export default function DashboardPage() {
   const [customerCount, setCustomerCount] = useState(0);
   const [userName,      setUserName]      = useState('');
   const [loading,       setLoading]       = useState(true);
+  const [recentLimit,   setRecentLimit]   = useState(5);
+  const [hiddenWidgets, setHiddenWidgets] = useState<string[]>([]);
 
   const hour     = new Date().getHours();
   const greeting = hour < 12 ? 'Buenos días' : hour < 18 ? 'Buenas tardes' : 'Buenas noches';
@@ -79,9 +111,10 @@ export default function DashboardPage() {
         const p = JSON.parse(atob(token.split('.')[1]));
         setUserName(p.name || '');
       }
+      const saved = localStorage.getItem('dashboard_hidden_widgets');
+      if (saved) setHiddenWidgets(JSON.parse(saved));
     } catch { /* ignore */ }
 
-    // Last 7 days skeleton (Lima time)
     const skeleton = Array.from({ length: 7 }, (_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - (6 - i));
@@ -96,7 +129,7 @@ export default function DashboardPage() {
       apiClient.get('/reports/sales/daily?days=7'),
       apiClient.get('/reports/sales/by-product'),
       apiClient.get('/reports/sales/by-payment-method'),
-      apiClient.get('/reports/receipts?take=5'),
+      apiClient.get('/reports/receipts?take=20'),
       apiClient.get('/products'),
       apiClient.get('/customers'),
     ]).then(([sum, daily, prod, pay, rec, prods, custs]) => {
@@ -131,11 +164,21 @@ export default function DashboardPage() {
     });
   }, []);
 
+  const toggleWidget = useCallback((id: string) => {
+    setHiddenWidgets((prev) => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+      try { localStorage.setItem('dashboard_hidden_widgets', JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
+  const isHidden = (id: string) => hiddenWidgets.includes(id);
+
   const avgTicket = summary && summary.todayTransactions > 0
     ? summary.todayRevenue / summary.todayTransactions : 0;
 
-  const totalPayments      = payments.reduce((s, p) => s + p.netAmount, 0);
-  const topProductRevenue  = Number(topProducts[0]?.totalRevenue ?? 0) || 1;
+  const totalPayments     = payments.reduce((s, p) => s + p.netAmount, 0);
+  const topProductRevenue = Number(topProducts[0]?.totalRevenue ?? 0) || 1;
 
   const kpis = [
     {
@@ -176,11 +219,16 @@ export default function DashboardPage() {
     },
   ];
 
+  const visibleTx = recentTx.slice(0, recentLimit);
+
   return (
-    <div className="space-y-5 pb-10">
+    <div className="space-y-6 pb-10">
 
       {/* ── Greeting ───────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-fade-in-up"
+        style={{ animationDelay: '0ms' }}
+      >
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
             {greeting}{userName ? `, ${userName.split(' ')[0]}` : ''}
@@ -196,265 +244,287 @@ export default function DashboardPage() {
       </div>
 
       {/* ── KPI Cards ──────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpis.map((k) => (
-          <Link
-            key={k.label} href={k.href}
-            className={`bg-white rounded-2xl border border-gray-100 border-t-2 ${k.border} shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all group outline-none`}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${k.iconBg}`}>
-                {k.icon}
+      <Section id="kpis" label="Indicadores" hidden={isHidden('kpis')} onToggle={toggleWidget} delay={80}>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {kpis.map((k) => (
+            <Link
+              key={k.label} href={k.href}
+              className={`bg-white rounded-2xl border border-gray-100 border-t-2 ${k.border} shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all group outline-none`}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${k.iconBg}`}>
+                  {k.icon}
+                </div>
+                <ArrowUpRight size={15} className="text-gray-300 group-hover:text-gray-400 transition-colors mt-0.5" />
               </div>
-              <ArrowUpRight size={15} className="text-gray-300 group-hover:text-gray-400 transition-colors mt-0.5" />
-            </div>
-            {loading ? (
-              <>
-                <Skeleton className="h-7 w-3/4 mb-2" />
-                <Skeleton className="h-3.5 w-1/2 mb-1" />
-                <Skeleton className="h-3 w-2/3" />
-              </>
-            ) : (
-              <>
-                <p className="text-[1.6rem] font-bold text-gray-900 leading-none mb-1.5 tracking-tight">{k.value}</p>
-                <p className="text-xs font-semibold text-gray-500">{k.label}</p>
-                <p className="text-[11px] text-gray-400 mt-0.5 truncate">{k.sub}</p>
-              </>
-            )}
-          </Link>
-        ))}
-      </div>
+              {loading ? (
+                <>
+                  <Skeleton className="h-7 w-3/4 mb-2" />
+                  <Skeleton className="h-3.5 w-1/2 mb-1" />
+                  <Skeleton className="h-3 w-2/3" />
+                </>
+              ) : (
+                <>
+                  <p className="text-[1.6rem] font-bold text-gray-900 leading-none mb-1.5 tracking-tight">{k.value}</p>
+                  <p className="text-xs font-semibold text-gray-500">{k.label}</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5 truncate">{k.sub}</p>
+                </>
+              )}
+            </Link>
+          ))}
+        </div>
+      </Section>
 
       {/* ── Sales Chart + Top Products ─────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <Section id="charts" label="Ventas" hidden={isHidden('charts')} onToggle={toggleWidget} delay={160}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-        {/* Sales chart */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <h2 className="text-[15px] font-bold text-gray-900">Tendencia de ventas</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Ventas netas · últimos 7 días</p>
+          {/* Sales chart */}
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h2 className="text-[15px] font-bold text-gray-900">Tendencia de ventas</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Ventas netas · últimos 7 días</p>
+              </div>
             </div>
-          </div>
-          {loading ? (
-            <Skeleton className="h-[200px] w-full" />
-          ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={chartData} margin={{ top: 4, right: 2, bottom: 0, left: 0 }}>
-                <defs>
-                  <linearGradient id="dashGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%"   stopColor="#2563eb" stopOpacity={0.18} />
-                    <stop offset="100%" stopColor="#2563eb" stopOpacity={0}    />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="#f1f5f9" vertical={false} strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="day"
-                  tick={{ fontSize: 11, fill: '#94a3b8' }}
-                  axisLine={false} tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 11, fill: '#94a3b8' }}
-                  axisLine={false} tickLine={false} width={56}
-                  tickFormatter={(v) => v === 0 ? 'S/0' : `S/${(v / 1000).toFixed(1)}k`}
-                />
-                <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#e2e8f0', strokeWidth: 1 }} />
-                <Area
-                  type="monotone" dataKey="value"
-                  stroke="#2563eb" strokeWidth={2.5}
-                  fill="url(#dashGrad)"
-                  dot={false}
-                  activeDot={{ r: 5, fill: '#2563eb', stroke: '#fff', strokeWidth: 2 }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-
-        {/* Top Products */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h2 className="text-[15px] font-bold text-gray-900">Top productos</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Por ingresos totales</p>
-            </div>
-            <Link href="/reports/por-articulo" className="text-xs text-brand-600 hover:underline font-medium">
-              Ver más
-            </Link>
-          </div>
-          {loading ? (
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="space-y-1.5">
-                  <div className="flex justify-between">
-                    <Skeleton className="h-4 w-2/3" />
-                    <Skeleton className="h-4 w-1/5" />
-                  </div>
-                  <Skeleton className="h-1.5 w-full" />
-                </div>
-              ))}
-            </div>
-          ) : topProducts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-gray-300">
-              <Package size={32} strokeWidth={1} />
-              <p className="text-xs mt-2">Sin datos aún</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {topProducts.map((p, i) => {
-                const rev = Number(p.totalRevenue ?? 0);
-                const pct = topProductRevenue > 0 ? (rev / topProductRevenue) * 100 : 0;
-                return (
-                  <div key={i}>
-                    <div className="flex items-center justify-between mb-1.5 gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[11px] font-bold text-gray-400 w-4 shrink-0">{i + 1}</span>
-                        <p className="text-[13px] text-gray-700 font-medium truncate">{p.productName}</p>
-                      </div>
-                      <p className="text-[13px] font-bold text-gray-900 shrink-0">{money(rev)}</p>
-                    </div>
-                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden ml-6">
-                      <div
-                        className="h-full bg-brand-500 rounded-full"
-                        style={{ width: `${pct}%`, transition: 'width 0.6s ease' }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-      </div>
-
-      {/* ── Recent Transactions + Payment Methods ──────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-        {/* Recent transactions */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
-            <div>
-              <h2 className="text-[15px] font-bold text-gray-900">Últimas ventas</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Transacciones más recientes</p>
-            </div>
-            <Link href="/reports/recibos" className="text-xs text-brand-600 hover:underline font-medium">
-              Ver todas
-            </Link>
+            {loading ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <AreaChart data={chartData} margin={{ top: 4, right: 2, bottom: 0, left: 0 }}>
+                  <defs>
+                    <linearGradient id="dashGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%"   stopColor="#2563eb" stopOpacity={0.18} />
+                      <stop offset="100%" stopColor="#2563eb" stopOpacity={0}    />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="#f1f5f9" vertical={false} strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="day"
+                    tick={{ fontSize: 11, fill: '#94a3b8' }}
+                    axisLine={false} tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: '#94a3b8' }}
+                    axisLine={false} tickLine={false} width={56}
+                    tickFormatter={(v) => v === 0 ? 'S/0' : `S/${(v / 1000).toFixed(1)}k`}
+                  />
+                  <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#e2e8f0', strokeWidth: 1 }} />
+                  <Area
+                    type="monotone" dataKey="value"
+                    stroke="#2563eb" strokeWidth={2.5}
+                    fill="url(#dashGrad)"
+                    dot={false}
+                    activeDot={{ r: 5, fill: '#2563eb', stroke: '#fff', strokeWidth: 2 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
 
-          {loading ? (
-            <div className="divide-y divide-gray-50">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-center gap-4 px-6 py-3.5">
-                  <Skeleton className="w-9 h-9 rounded-xl shrink-0" />
-                  <div className="flex-1 space-y-1.5">
-                    <Skeleton className="h-3.5 w-1/3" />
-                    <Skeleton className="h-3 w-1/2" />
-                  </div>
-                  <div className="space-y-1.5 text-right">
-                    <Skeleton className="h-3.5 w-16" />
-                    <Skeleton className="h-3 w-10 ml-auto" />
-                  </div>
-                </div>
-              ))}
+          {/* Top Products */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-[15px] font-bold text-gray-900">Top productos</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Por ingresos totales</p>
+              </div>
+              <Link href="/reports/por-articulo" className="text-xs text-brand-600 hover:underline font-medium">
+                Ver más
+              </Link>
             </div>
-          ) : recentTx.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-14 text-gray-300">
-              <Receipt size={32} strokeWidth={1} />
-              <p className="text-xs mt-2">Sin ventas recientes</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-50">
-              {recentTx.map((tx) => {
-                const pm = tx.payments?.[0];
-                const pmLabel = pm
-                  ? (pm.gatewayName || METHOD_LABELS[pm.method] || pm.method)
-                  : '—';
-                return (
-                  <div key={tx.id} className="flex items-center gap-4 px-6 py-3.5 hover:bg-gray-50/60 transition-colors">
-                    <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
-                      <Receipt size={15} className="text-brand-600" />
+            {loading ? (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="space-y-1.5">
+                    <div className="flex justify-between">
+                      <Skeleton className="h-4 w-2/3" />
+                      <Skeleton className="h-4 w-1/5" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-semibold text-gray-800">{tx.transactionNumber}</p>
-                      <p className="text-[11px] text-gray-400 truncate mt-0.5">
-                        {tx.cashier?.name ?? '—'} · {pmLabel}
-                      </p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-[13px] font-bold text-gray-900">{money(Number(tx.total))}</p>
-                      <p className="text-[11px] text-gray-400 mt-0.5">
-                        {new Date(tx.createdAt).toLocaleTimeString('es-PE', {
-                          hour: '2-digit', minute: '2-digit', timeZone: 'America/Lima',
-                        })}
-                      </p>
-                    </div>
+                    <Skeleton className="h-1.5 w-full" />
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Payment Methods */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <div className="mb-5">
-            <h2 className="text-[15px] font-bold text-gray-900">Métodos de pago</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Distribución histórica</p>
-          </div>
-
-          {loading ? (
-            <div className="space-y-5">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="space-y-1.5">
-                  <div className="flex justify-between">
-                    <Skeleton className="h-4 w-1/3" />
-                    <Skeleton className="h-4 w-10" />
-                  </div>
-                  <Skeleton className="h-1.5 w-full" />
-                  <Skeleton className="h-3 w-1/2" />
-                </div>
-              ))}
-            </div>
-          ) : payments.filter(p => p.netAmount > 0).length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-gray-300">
-              <CreditCard size={32} strokeWidth={1} />
-              <p className="text-xs mt-2">Sin datos aún</p>
-            </div>
-          ) : (
-            <div className="space-y-5">
-              {payments
-                .filter(p => p.netAmount > 0)
-                .sort((a, b) => b.netAmount - a.netAmount)
-                .map((p) => {
-                  const label = METHOD_LABELS[p.method] ?? p.method;
-                  const pct   = totalPayments > 0 ? Math.round((p.netAmount / totalPayments) * 100) : 0;
-                  const color = METHOD_COLORS[p.method] ?? '#94a3b8';
+                ))}
+              </div>
+            ) : topProducts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-gray-300">
+                <Package size={32} strokeWidth={1} />
+                <p className="text-xs mt-2">Sin datos aún</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {topProducts.map((p, i) => {
+                  const rev = Number(p.totalRevenue ?? 0);
+                  const pct = topProductRevenue > 0 ? (rev / topProductRevenue) * 100 : 0;
                   return (
-                    <div key={p.method}>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                          <p className="text-[13px] text-gray-700 font-medium">{label}</p>
+                    <div key={i}>
+                      <div className="flex items-center justify-between mb-1.5 gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-[11px] font-bold text-gray-400 w-4 shrink-0">{i + 1}</span>
+                          <p className="text-[13px] text-gray-700 font-medium truncate">{p.productName}</p>
                         </div>
-                        <span className="text-[13px] font-bold text-gray-900">{pct}%</span>
+                        <p className="text-[13px] font-bold text-gray-900 shrink-0">{money(rev)}</p>
                       </div>
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden ml-6">
                         <div
-                          className="h-full rounded-full"
-                          style={{ width: `${pct}%`, backgroundColor: color, transition: 'width 0.6s ease' }}
+                          className="h-full bg-brand-500 rounded-full"
+                          style={{ width: `${pct}%`, transition: 'width 0.6s ease' }}
                         />
                       </div>
-                      <p className="text-[11px] text-gray-400 mt-1">{money(p.netAmount)}</p>
                     </div>
                   );
                 })}
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
 
-      </div>
+        </div>
+      </Section>
+
+      {/* ── Recent Transactions + Payment Methods ──────────────────────────── */}
+      <Section id="transactions" label="Actividad reciente" hidden={isHidden('transactions')} onToggle={toggleWidget} delay={240}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+          {/* Recent transactions */}
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
+              <div>
+                <h2 className="text-[15px] font-bold text-gray-900">Últimas ventas</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Transacciones más recientes</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Limit selector */}
+                <div className="flex items-center gap-1 bg-gray-50 rounded-lg p-0.5">
+                  {[5, 10, 20].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => setRecentLimit(n)}
+                      className={`text-[11px] font-semibold px-2 py-1 rounded-md transition-colors ${
+                        recentLimit === n ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+                <Link href="/reports/recibos" className="text-xs text-brand-600 hover:underline font-medium">
+                  Ver todas
+                </Link>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="divide-y divide-gray-50">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-4 px-6 py-3.5">
+                    <Skeleton className="w-9 h-9 rounded-xl shrink-0" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-3.5 w-1/3" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                    <div className="space-y-1.5 text-right">
+                      <Skeleton className="h-3.5 w-16" />
+                      <Skeleton className="h-3 w-10 ml-auto" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : recentTx.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-14 text-gray-300">
+                <Receipt size={32} strokeWidth={1} />
+                <p className="text-xs mt-2">Sin ventas recientes</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {visibleTx.map((tx) => {
+                  const pm = tx.payments?.[0];
+                  const pmLabel = pm
+                    ? (pm.gatewayName || METHOD_LABELS[pm.method] || pm.method)
+                    : '—';
+                  return (
+                    <div key={tx.id} className="flex items-center gap-4 px-6 py-3.5 hover:bg-gray-50/60 transition-colors">
+                      <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
+                        <Receipt size={15} className="text-brand-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold text-gray-800">{tx.transactionNumber}</p>
+                        <p className="text-[11px] text-gray-400 truncate mt-0.5">
+                          {tx.cashier?.name ?? '—'} · {pmLabel}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-[13px] font-bold text-gray-900">{money(Number(tx.total))}</p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
+                          {new Date(tx.createdAt).toLocaleTimeString('es-PE', {
+                            hour: '2-digit', minute: '2-digit', timeZone: 'America/Lima',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Payment Methods */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <div className="mb-5">
+              <h2 className="text-[15px] font-bold text-gray-900">Métodos de pago</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Distribución histórica</p>
+            </div>
+
+            {loading ? (
+              <div className="space-y-5">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="space-y-1.5">
+                    <div className="flex justify-between">
+                      <Skeleton className="h-4 w-1/3" />
+                      <Skeleton className="h-4 w-10" />
+                    </div>
+                    <Skeleton className="h-1.5 w-full" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                ))}
+              </div>
+            ) : payments.filter(p => p.netAmount > 0).length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-gray-300">
+                <CreditCard size={32} strokeWidth={1} />
+                <p className="text-xs mt-2">Sin datos aún</p>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {payments
+                  .filter(p => p.netAmount > 0)
+                  .sort((a, b) => b.netAmount - a.netAmount)
+                  .map((p) => {
+                    const label = METHOD_LABELS[p.method] ?? p.method;
+                    const pct   = totalPayments > 0 ? Math.round((p.netAmount / totalPayments) * 100) : 0;
+                    const color = METHOD_COLORS[p.method] ?? '#94a3b8';
+                    return (
+                      <div key={p.method}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                            <p className="text-[13px] text-gray-700 font-medium">{label}</p>
+                          </div>
+                          <span className="text-[13px] font-bold text-gray-900">{pct}%</span>
+                        </div>
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full"
+                            style={{ width: `${pct}%`, backgroundColor: color, transition: 'width 0.6s ease' }}
+                          />
+                        </div>
+                        <p className="text-[11px] text-gray-400 mt-1">{money(p.netAmount)}</p>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+
+        </div>
+      </Section>
     </div>
   );
 }

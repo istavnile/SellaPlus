@@ -2,11 +2,14 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { MailingService } from '../../common/mailing/mailing.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UserRole } from '@prisma/client';
@@ -17,6 +20,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwt: JwtService,
     private config: ConfigService,
+    private mailing: MailingService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -73,6 +77,63 @@ export class AuthService {
     }
 
     return this.generateTokens(user.id, user.email, user.name, user.tenantId, user.role);
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    const user = await this.prisma.user.findFirst({ where: { email, isActive: true } });
+    if (!user) return; // never reveal whether the email exists
+
+    const token   = crypto.randomUUID();
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { passwordResetToken: token, passwordResetExpires: expires },
+    });
+
+    const frontendUrl = this.config.get('FRONTEND_URL', 'http://localhost:3000');
+    const resetLink   = `${frontendUrl}/reset-password?token=${token}`;
+
+    await this.mailing.sendMail(
+      email,
+      'Recuperar contraseña — SellaPlus',
+      `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+        <h2 style="color:#1e3a8a;margin-bottom:12px">Restablecer contraseña</h2>
+        <p style="color:#374151;line-height:1.6">
+          Recibimos una solicitud para restablecer la contraseña de tu cuenta en SellaPlus.
+          Haz clic en el botón para continuar:
+        </p>
+        <a href="${resetLink}"
+          style="display:inline-block;margin:20px 0;background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">
+          Restablecer contraseña
+        </a>
+        <p style="color:#9ca3af;font-size:13px">Este enlace expira en 1 hora. Si no solicitaste este cambio, ignora este correo.</p>
+      </div>`,
+    );
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        passwordResetToken: token,
+        passwordResetExpires: { gt: new Date() },
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('El enlace es inválido o ha expirado');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+      },
+    });
   }
 
   private generateTokens(userId: string, email: string, name: string, tenantId: string, role: string) {
