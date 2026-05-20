@@ -486,7 +486,7 @@ export default function TouchPosPage() {
     <div className="flex flex-col h-full bg-gray-50">
 
       {/* ── Top header ────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-200 px-3 py-2.5 flex items-center gap-2 safe-top shrink-0">
+      <div className="bg-white border-b border-gray-200 px-3 py-2.5 flex items-center gap-2 shrink-0">
         {/* TPV info + back to backoffice */}
         <div className="flex items-center gap-1.5 shrink-0">
           {session && (
