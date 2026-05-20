@@ -260,12 +260,12 @@ function CartPanel({
 function TabsDrawer({
   open, onClose, tabs,
   onSave, onResume, onDelete,
-  hasCart,
+  hasCart, activeTabId,
 }: {
   open: boolean; onClose: () => void;
   tabs: SavedTab[];
   onSave: () => void; onResume: (tab: SavedTab) => void; onDelete: (id: string) => void;
-  hasCart: boolean;
+  hasCart: boolean; activeTabId: string | null;
 }) {
   return (
     <>
@@ -294,7 +294,7 @@ function TabsDrawer({
               onClick={onSave}
               className="w-full flex items-center justify-center gap-2 bg-brand-600 text-white text-sm font-semibold py-3 rounded-xl hover:bg-brand-700 active:scale-[0.98] transition-all"
             >
-              <Bookmark size={15} /> Guardar carrito actual
+              <Bookmark size={15} /> {activeTabId ? 'Actualizar cuenta' : 'Guardar carrito actual'}
             </button>
           </div>
         )}
@@ -306,35 +306,55 @@ function TabsDrawer({
               <p className="text-sm mt-2">Sin cuentas guardadas</p>
             </div>
           ) : (
-            tabs.map((tab) => (
-              <div key={tab.id}
-                className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 truncate">{tab.label}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {tab.items.length} ítem{tab.items.length !== 1 ? 's' : ''} ·{' '}
-                    {tab.customer?.name ?? 'Sin cliente'}
-                  </p>
-                  <p className="text-[11px] text-orange-400 mt-0.5 flex items-center gap-1">
-                    <Clock size={10} /> {fmtTimeLeft(tab.expiresAt)}
-                  </p>
+            tabs.map((tab) => {
+              const isActive = tab.id === activeTabId;
+              return (
+                <div key={tab.id}
+                  className={cn(
+                    'flex items-center gap-3 rounded-2xl px-4 py-3 border',
+                    isActive
+                      ? 'bg-brand-50 border-brand-200'
+                      : 'bg-gray-50 border-gray-100',
+                  )}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-gray-800 truncate">{tab.label}</p>
+                      {isActive && (
+                        <span className="shrink-0 text-[10px] font-bold text-brand-600 bg-brand-100 px-1.5 py-0.5 rounded-full">
+                          En curso
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {tab.items.length} ítem{tab.items.length !== 1 ? 's' : ''} ·{' '}
+                      {tab.customer?.name ?? 'Sin cliente'}
+                    </p>
+                    <p className="text-[11px] text-orange-400 mt-0.5 flex items-center gap-1">
+                      <Clock size={10} /> {fmtTimeLeft(tab.expiresAt)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => onResume(tab)}
+                      className={cn(
+                        'text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors',
+                        isActive
+                          ? 'text-brand-700 bg-brand-100 hover:bg-brand-200'
+                          : 'text-brand-600 bg-brand-50 hover:bg-brand-100',
+                      )}
+                    >
+                      {isActive ? 'Restaurar' : 'Reanudar'}
+                    </button>
+                    <button
+                      onClick={() => onDelete(tab.id)}
+                      className="p-1.5 text-gray-300 hover:text-red-400 transition-colors"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => onResume(tab)}
-                    className="text-xs font-semibold text-brand-600 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    Reanudar
-                  </button>
-                  <button
-                    onClick={() => onDelete(tab.id)}
-                    className="p-1.5 text-gray-300 hover:text-red-400 transition-colors"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
         <div className="h-safe-bottom pb-4" />
@@ -365,6 +385,7 @@ export default function TouchPosPage() {
   const [session,     setSession]     = useState<PosSession | null>(null);
   const [savedTabs,   setSavedTabs]   = useState<SavedTab[]>([]);
   const [tabsOpen,    setTabsOpen]    = useState(false);
+  const [activeTabId, setActiveTabId] = useState<string | null>(null);
 
   useEffect(() => {
     const raw = typeof window !== 'undefined' ? localStorage.getItem('pos_session') : null;
@@ -425,12 +446,31 @@ export default function TouchPosPage() {
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
 
   const handleSuccess = () => {
+    if (activeTabId) {
+      const next = savedTabs.filter(t => t.id !== activeTabId);
+      setSavedTabs(next);
+      persistTabs(next);
+      setActiveTabId(null);
+    }
     setCart([]);
     setSelectedCustomer(null);
   };
 
   const saveCurrentTab = () => {
     if (cart.length === 0) return;
+
+    if (activeTabId) {
+      const next = savedTabs.map(t => t.id === activeTabId
+        ? { ...t, items: cart, customer: selectedCustomer, expiresAt: Date.now() + TAB_TTL }
+        : t
+      );
+      setSavedTabs(next);
+      persistTabs(next);
+      toast.success('Cuenta actualizada');
+      setTabsOpen(false);
+      return;
+    }
+
     const activeTabs = loadTabs();
     const autoLabel = selectedCustomer?.name ?? `Cuenta #${activeTabs.length + 1}`;
     const tab: SavedTab = {
@@ -451,11 +491,9 @@ export default function TouchPosPage() {
   };
 
   const resumeTab = (tab: SavedTab) => {
-    let currentTabs = savedTabs.filter(t => t.id !== tab.id);
-
-    // Auto-save the active cart before switching
-    if (cart.length > 0) {
-      const autoLabel = selectedCustomer?.name ?? `Cuenta #${currentTabs.length + 1}`;
+    // Auto-save only if cart has items that are NOT from a saved tab
+    if (cart.length > 0 && !activeTabId) {
+      const autoLabel = selectedCustomer?.name ?? `Cuenta #${savedTabs.length + 1}`;
       const autoTab: SavedTab = {
         id: crypto.randomUUID(),
         label: autoLabel,
@@ -464,14 +502,16 @@ export default function TouchPosPage() {
         createdAt: Date.now(),
         expiresAt: Date.now() + TAB_TTL,
       };
-      currentTabs = [...currentTabs, autoTab];
+      const next = [...savedTabs, autoTab];
+      setSavedTabs(next);
+      persistTabs(next);
       toast(`Carrito guardado: ${autoLabel}`, { icon: '🔖' });
     }
 
-    setSavedTabs(currentTabs);
-    persistTabs(currentTabs);
+    // Tab stays in savedTabs — only removed on successful checkout
+    setActiveTabId(tab.id);
     setCart(tab.items);
-    setSelectedCustomer(tab.customer);
+    setSelectedCustomer(tab.customer ?? null);
     setTabsOpen(false);
     toast.success(`Reanudando: ${tab.label}`);
   };
@@ -480,6 +520,7 @@ export default function TouchPosPage() {
     const next = savedTabs.filter(t => t.id !== tabId);
     setSavedTabs(next);
     persistTabs(next);
+    if (activeTabId === tabId) setActiveTabId(null);
   };
 
   return (
@@ -720,6 +761,7 @@ export default function TouchPosPage() {
         onResume={resumeTab}
         onDelete={deleteTab}
         hasCart={cart.length > 0}
+        activeTabId={activeTabId}
       />
 
       {/* Customer picker modal */}

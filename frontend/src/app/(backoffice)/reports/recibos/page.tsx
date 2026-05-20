@@ -19,7 +19,7 @@ interface Receipt {
   cashier?: { name: string };
   customer?: { name: string; email?: string } | null;
   payments?: { method: string; gatewayName?: string; amount: number; cashTendered?: number; changeGiven?: number }[];
-  items?: { productName: string }[];
+  items?: { productName: string; quantity: number }[];
 }
 
 interface ReceiptDetail extends Receipt {
