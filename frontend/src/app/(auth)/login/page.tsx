@@ -374,12 +374,12 @@ export default function LoginPage() {
           style={{ background: 'radial-gradient(circle, #3b82f6, transparent 70%)', animation: 'blobFloat3 26s ease-in-out infinite 3s' }} />
       </div>
 
-      <div className="relative flex-1 flex flex-col items-center justify-center overflow-y-auto px-5 py-10"
-        style={{ paddingTop: 'max(2.5rem, calc(env(safe-area-inset-top) + 1.5rem))' }}>
+      <div className="relative flex-1 flex flex-col items-center justify-start overflow-y-auto px-5 pb-10"
+        style={{ paddingTop: 'max(4rem, calc(env(safe-area-inset-top) + 2.5rem))' }}>
 
         {/* ── LOGIN ─────────────────────────────────────────────────────────── */}
         {screen === 'login' && (
-          <div className="w-full max-w-4xl flex flex-col md:flex-row items-start gap-8 md:gap-14 my-auto">
+          <div className="w-full max-w-4xl flex flex-col md:flex-row items-start gap-8 md:gap-14 mt-[18vh] md:mt-0">
 
             {/* Glass login card — first on mobile (order-1), second on desktop (md:order-2) */}
             <div className="w-full max-w-sm md:max-w-none md:w-[380px] shrink-0 order-1 md:order-2">
