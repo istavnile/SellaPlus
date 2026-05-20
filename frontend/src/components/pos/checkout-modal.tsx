@@ -160,8 +160,7 @@ export function CheckoutModal({ isOpen, onClose, total, subtotal, cart, customer
             {/* Email receipt */}
             {customer?.email ? (
               <label className="flex items-center gap-3 cursor-pointer select-none group">
-                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors shrink-0 ${sendReceipt ? 'bg-brand-600 border-brand-600' : 'border-gray-300 group-hover:border-brand-400'}`}
-                  onClick={() => setSendReceipt((v) => !v)}>
+                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors shrink-0 ${sendReceipt ? 'bg-brand-600 border-brand-600' : 'border-gray-300 group-hover:border-brand-400'}`}>
                   {sendReceipt && (
                     <svg viewBox="0 0 10 8" className="w-3 h-3 text-white fill-none stroke-current stroke-2">
                       <polyline points="1,4 4,7 9,1" />
