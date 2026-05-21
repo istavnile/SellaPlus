@@ -56,7 +56,6 @@ export function CustomerPickerModal({ open, onClose, onSelect }: Props) {
       const res = await apiClient.post('/customers', {
         name: newName.trim(),
         email: newEmail.trim() || undefined,
-        isActive: true,
       });
       toast.success('Cliente creado correctamente');
       onSelect(res.data);
