@@ -83,7 +83,12 @@ export class EmployeesService {
   async remove(tenantId: string, id: string) {
     const user = await this.prisma.user.findFirst({ where: { id, tenantId } });
     if (!user) throw new NotFoundException('Colaborador no encontrado');
-    return this.prisma.user.update({ where: { id }, data: { isActive: false } });
+    // Free the email slot so it can be reused, while preserving transaction history
+    await this.prisma.user.update({
+      where: { id },
+      data: { isActive: false, email: `deleted_${id}@deleted.local`, pinHash: null },
+    });
+    return { ok: true };
   }
 
   /**

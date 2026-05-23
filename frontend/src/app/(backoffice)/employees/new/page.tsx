@@ -146,7 +146,8 @@ export default function NewEmployeePage() {
       const res = await apiClient.post('/employees', data);
       setPinEmployee(res.data.id);
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Error al crear el colaborador');
+      const msg = err?.response?.data?.message;
+      toast.error(typeof msg === 'string' ? msg : 'Error al crear el colaborador');
       setLoading(false);
     }
   };

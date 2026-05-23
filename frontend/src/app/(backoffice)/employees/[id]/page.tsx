@@ -276,7 +276,8 @@ export default function EditEmployeePage() {
       toast.success('Colaborador actualizado');
       load();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Error al actualizar');
+      const msg = err?.response?.data?.message;
+      toast.error(typeof msg === 'string' ? msg : 'Error al actualizar');
     } finally {
       setSaving(false);
     }
