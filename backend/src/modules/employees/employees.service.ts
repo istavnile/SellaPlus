@@ -9,9 +9,9 @@ export class EmployeesService {
 
   async findAll(tenantId: string) {
     return this.prisma.user.findMany({
-      where: { tenantId },
+      where: { tenantId, isActive: true },
       select: {
-        id: true, name: true, email: true, role: true, isActive: true, 
+        id: true, name: true, email: true, role: true, isActive: true,
         createdAt: true,
       },
       orderBy: { name: 'asc' },
