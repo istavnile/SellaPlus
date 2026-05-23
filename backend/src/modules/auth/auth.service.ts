@@ -112,6 +112,13 @@ export class AuthService {
     );
   }
 
+  async logout(tenantId: string, userId: string): Promise<void> {
+    await this.prisma.posDevice.updateMany({
+      where: { tenantId, currentCashierId: userId },
+      data: { currentCashierId: null, sessionToken: null, lastActiveAt: null },
+    });
+  }
+
   async resetPassword(token: string, newPassword: string): Promise<void> {
     const user = await this.prisma.user.findFirst({
       where: {

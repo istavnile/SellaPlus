@@ -1,7 +1,10 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { UserRole } from '@prisma/client';
 import { PosDevicesService } from './pos-devices.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, JwtPayload } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('POS Devices')
@@ -57,5 +60,23 @@ export class PosDevicesController {
     @Body('sessionToken') sessionToken: string,
   ) {
     return this.posDevicesService.release(user.tenantId, id, sessionToken);
+  }
+
+  @Post(':id/force-release')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Forzar liberación de un TPV (admin/propietario)' })
+  forceRelease(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return this.posDevicesService.forceRelease(user.tenantId, id);
+  }
+
+  @Post(':id/heartbeat')
+  @ApiOperation({ summary: 'Mantener sesión TPV activa' })
+  heartbeat(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body('sessionToken') sessionToken: string,
+  ) {
+    return this.posDevicesService.heartbeat(user.tenantId, id, sessionToken);
   }
 }
