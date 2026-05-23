@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { Mail, Users, User as UserIcon, Lock, Trash2, ArrowLeft } from 'lucide-react';
+import { Mail, Users, User as UserIcon, Lock, Trash2, ArrowLeft, KeyRound } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 import { cn } from '@/lib/utils/cn';
 
@@ -20,6 +20,26 @@ const schema = z.object({
 });
 
 type EmployeeForm = z.infer<typeof schema>;
+
+function decodeJwt(token: string): Record<string, any> | null {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch {
+    return null;
+  }
+}
+
+function useCurrentUserRole(): string {
+  const [role, setRole] = useState('CASHIER');
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    if (token) {
+      const payload = decodeJwt(token);
+      if (payload?.role) setRole(payload.role);
+    }
+  }, []);
+  return role;
+}
 
 // ─── Modal PIN ────────────────────────────────────────────────────────────────
 
@@ -120,6 +140,92 @@ function PinModal({ employeeId, onDone, onCancel }: { employeeId: string; onDone
   );
 }
 
+// ─── Modal Cambiar Contraseña ─────────────────────────────────────────────────
+
+function PasswordModal({ employeeId, onDone, onCancel }: { employeeId: string; onDone: () => void; onCancel: () => void }) {
+  const [newPassword, setNewPassword] = useState('');
+  const [confirm,     setConfirm]     = useState('');
+  const [saving,      setSaving]      = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const handleConfirm = async () => {
+    if (newPassword.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    if (newPassword !== confirm) {
+      toast.error('Las contraseñas no coinciden');
+      return;
+    }
+    setSaving(true);
+    try {
+      await apiClient.patch(`/employees/${employeeId}/password`, { newPassword });
+      toast.success('Contraseña actualizada');
+      onDone();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Error al cambiar la contraseña');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-8 text-center">
+        <div className="flex justify-center mb-5">
+          <div className="w-20 h-20 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-100">
+            <KeyRound size={36} strokeWidth={1.5} />
+          </div>
+        </div>
+
+        <h2 className="text-xl font-bold text-gray-900 mb-1 tracking-tight">Cambiar contraseña</h2>
+        <p className="text-sm text-gray-500 mb-6">La nueva contraseña reemplazará la contraseña actual del colaborador.</p>
+
+        <div className="space-y-3 text-left mb-6">
+          <div>
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Nueva contraseña</label>
+            <input
+              ref={inputRef}
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full border-b-2 border-gray-100 py-2 text-sm text-gray-800 focus:outline-none focus:border-amber-400 bg-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Confirmar contraseña</label>
+            <input
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
+              className="w-full border-b-2 border-gray-100 py-2 text-sm text-gray-800 focus:outline-none focus:border-amber-400 bg-transparent"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onCancel}
+            className="text-sm font-medium text-gray-400 hover:text-gray-600 px-4 py-2"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={saving}
+            className="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2 rounded-lg text-sm font-bold disabled:opacity-50 transition-colors"
+          >
+            {saving ? 'Guardando...' : 'Confirmar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 const ROLES = [
@@ -131,10 +237,14 @@ const ROLES = [
 export default function EditEmployeePage() {
   const router = useRouter();
   const { id } = useParams();
-  const [loading, setLoading]       = useState(true);
-  const [saving, setSaving]         = useState(false);
-  const [showPinModal, setShowPinModal] = useState(false);
-  const [employee, setEmployee]      = useState<any>(null);
+  const currentUserRole = useCurrentUserRole();
+  const canManage = currentUserRole === 'OWNER' || currentUserRole === 'ADMIN';
+
+  const [loading, setLoading]             = useState(true);
+  const [saving, setSaving]               = useState(false);
+  const [showPinModal, setShowPinModal]   = useState(false);
+  const [showPassModal, setShowPassModal] = useState(false);
+  const [employee, setEmployee]           = useState<any>(null);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<EmployeeForm>({
     resolver: zodResolver(schema),
@@ -288,7 +398,7 @@ export default function EditEmployeePage() {
                       <div>
                         <h3 className="font-bold text-gray-900 tracking-tight">PIN de TPV</h3>
                         <p className="text-sm text-gray-500 mt-1 leading-relaxed max-w-sm">
-                          {employee?.hasPin 
+                          {employee?.hasPin
                             ? "Este colaborador tiene un PIN activo para acceder al Punto de Venta."
                             : "Este colaborador no tiene un PIN configurado."}
                         </p>
@@ -315,9 +425,35 @@ export default function EditEmployeePage() {
                  </div>
               </div>
 
+              {/* Cambiar contraseña — solo OWNER / ADMIN */}
+              {canManage && (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+                  <div className="flex items-start justify-between">
+                    <div className="flex gap-4">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-amber-50 text-amber-500">
+                        <KeyRound size={22} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-gray-900 tracking-tight">Contraseña de acceso</h3>
+                        <p className="text-sm text-gray-500 mt-1 leading-relaxed max-w-sm">
+                          Cambia o restablece la contraseña de inicio de sesión de este colaborador.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowPassModal(true)}
+                      className="text-xs font-bold text-amber-600 hover:text-amber-700 tracking-wider px-4 py-2 bg-amber-50 rounded-lg transition-colors shrink-0"
+                    >
+                      Cambiar contraseña
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Standard Actions */}
               <div className="flex items-center justify-between pt-4">
-                {employee?.role !== 'OWNER' ? (
+                {canManage && employee?.role !== 'OWNER' ? (
                   <button
                     type="button"
                     onClick={onDelete}
@@ -356,7 +492,7 @@ export default function EditEmployeePage() {
                  </span>
                </div>
             </div>
-            
+
             <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
                <h4 className="font-bold text-xs uppercase tracking-wider text-gray-500 mb-4">Nota de Seguridad</h4>
                <p className="text-xs text-gray-400 leading-relaxed">
@@ -370,11 +506,16 @@ export default function EditEmployeePage() {
       {showPinModal && (
         <PinModal
           employeeId={id as string}
-          onDone={() => {
-            setShowPinModal(false);
-            load();
-          }}
+          onDone={() => { setShowPinModal(false); load(); }}
           onCancel={() => setShowPinModal(false)}
+        />
+      )}
+
+      {showPassModal && (
+        <PasswordModal
+          employeeId={id as string}
+          onDone={() => setShowPassModal(false)}
+          onCancel={() => setShowPassModal(false)}
         />
       )}
     </>

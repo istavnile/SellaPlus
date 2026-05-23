@@ -99,7 +99,12 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await apiClient.post('/auth/logout');
+    } catch {
+      // continue with logout even if the request fails
+    }
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     router.push('/login');

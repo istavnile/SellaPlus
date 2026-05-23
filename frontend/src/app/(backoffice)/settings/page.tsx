@@ -582,6 +582,11 @@ interface PosDevice {
   currentCashier?: { id: string; name: string; email: string } | null;
 }
 
+function decodeJwtRole(token: string): string {
+  try { return JSON.parse(atob(token.split('.')[1]))?.role ?? 'CASHIER'; }
+  catch { return 'CASHIER'; }
+}
+
 function DispositivosPanel() {
   const [devices,   setDevices]   = useState<PosDevice[]>([]);
   const [loading,   setLoading]   = useState(true);
@@ -590,6 +595,14 @@ function DispositivosPanel() {
   const [addOpen,   setAddOpen]   = useState(false);
   const [addName,   setAddName]   = useState('');
   const [saving,    setSaving]    = useState(false);
+  const [userRole,  setUserRole]  = useState('CASHIER');
+
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    if (token) setUserRole(decodeJwtRole(token));
+  }, []);
+
+  const canManage = userRole === 'OWNER' || userRole === 'ADMIN';
 
   const load = () => {
     setLoading(true);
@@ -633,6 +646,16 @@ function DispositivosPanel() {
     } catch { toast.error('Error al eliminar'); }
   };
 
+  const handleForceRelease = async (id: string) => {
+    if (!confirm('¿Liberar este TPV? El cajero actual perderá su sesión.')) return;
+    try {
+      await apiClient.post(`/pos-devices/${id}/force-release`);
+      toast.success('TPV liberado');
+      setEditing(null);
+      load();
+    } catch { toast.error('Error al liberar el TPV'); }
+  };
+
   if (editing) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-8 max-w-lg">
@@ -654,6 +677,19 @@ function DispositivosPanel() {
             <span className="text-sm font-medium">{editing.isActive ? 'Activado' : 'Desactivado'}</span>
           </div>
         </div>
+        {canManage && editing.currentCashier && (
+          <div className="flex items-center justify-between py-4 border-t border-gray-100">
+            <div className="text-sm text-gray-600">
+              En uso por: <span className="font-semibold text-gray-800">{editing.currentCashier.name}</span>
+            </div>
+            <button
+              onClick={() => handleForceRelease(editing.id)}
+              className="text-xs font-bold text-orange-600 hover:text-orange-700 px-3 py-1.5 bg-orange-50 rounded-lg transition-colors"
+            >
+              Liberar TPV
+            </button>
+          </div>
+        )}
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
           <button onClick={() => handleDelete(editing.id)} className="text-red-500 hover:text-red-600">
             <Trash2 size={18} />
