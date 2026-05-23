@@ -42,7 +42,19 @@ export class EmployeesService {
     const existing = await this.prisma.user.findUnique({
       where: { tenantId_email: { tenantId, email: data.email } },
     });
-    if (existing) throw new ConflictException('Ya existe un colaborador con ese email');
+
+    if (existing) {
+      if (!existing.isActive) {
+        // Reactivate the deactivated account with the new data
+        const passwordHash = await bcrypt.hash(data.password || Math.random().toString(36).slice(-12), 10);
+        return this.prisma.user.update({
+          where: { id: existing.id },
+          data: { name: data.name, role: data.role, passwordHash, isActive: true, pinHash: null },
+          select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+        });
+      }
+      throw new ConflictException('Ya existe un colaborador con ese email');
+    }
 
     const passwordHash = await bcrypt.hash(data.password || Math.random().toString(36).slice(-12), 10);
 
