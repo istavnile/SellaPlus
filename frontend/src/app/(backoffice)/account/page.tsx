@@ -193,14 +193,16 @@ export default function AccountPage() {
 
   const handleChangePassword = async () => {
     if (!password || !newPassword) { toast.error('Completa ambos campos de contraseña'); return; }
+    if (newPassword.length < 6) { toast.error('La nueva contraseña debe tener al menos 6 caracteres'); return; }
     setSaving(true);
     try {
       await apiClient.patch('/auth/change-password', { currentPassword: password, newPassword });
       toast.success('Contraseña actualizada');
       setPassword(''); setNewPassword('');
     } catch (err: any) {
-      const msg = err?.response?.data?.message;
-      toast.error(typeof msg === 'string' ? msg : 'Error al cambiar contraseña');
+      const raw = err?.response?.data?.message;
+      const msg = Array.isArray(raw) ? raw[0] : (typeof raw === 'string' ? raw : 'Error al cambiar contraseña');
+      toast.error(msg);
     } finally { setSaving(false); }
   };
 
@@ -283,6 +285,7 @@ export default function AccountPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Nueva contraseña</label>
             <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••"
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500" />
+            <p className="mt-1 text-xs text-gray-400">Mínimo 6 caracteres.</p>
           </div>
         </div>
         <div className="mt-6 flex justify-end">
