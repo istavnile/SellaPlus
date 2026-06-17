@@ -199,7 +199,8 @@ export default function AccountPage() {
       toast.success('Contraseña actualizada');
       setPassword(''); setNewPassword('');
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Error al cambiar contraseña');
+      const msg = err?.response?.data?.message;
+      toast.error(typeof msg === 'string' ? msg : 'Error al cambiar contraseña');
     } finally { setSaving(false); }
   };
 
